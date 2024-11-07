@@ -1,0 +1,29 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+#boardContainer {
+    position: relative;
+    display: flex;
+    background-color: aqua;
+    flex-flow: column;
+    height: 100%;
+    /*background-image: url("testbg.png");*/
+}
+
+#board {
+    width: 20cm;
+    height: 15cm;
+    background-color: antiquewhite;
+}
+
+.boardSquare {
+    position: absolute;
+    background-color: grey;
+    outline-color: black;
+    outline-style: solid;
+    outline-width: thin;
+    min-width: 2cm;
+    min-height: 2cm;
+}
