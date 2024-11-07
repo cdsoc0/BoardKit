@@ -1,56 +1,15 @@
-const CLASS_BOARD_SQUARE = "boardSquare"
-
 const appContainer = document.getElementById("appContainer");
-const board = document.getElementById("board");
+const boardDiv = document.getElementById("board");
 const newBtn = document.getElementById("newBtn");
 const loadBtn = document.getElementById("loadBtn");
 const saveBtn = document.getElementById("saveBtn");
+const playLink = document.getElementById("playLink");
 const supportErrors = document.querySelectorAll(".supportError");
-let boardLayout = {};
-
-class BoardSquare {
-    id = "";
-    label = "";
-    color = 0;
-    position = {"x": 0, "y": 0};
-    action = null;
-    element;
-    nextId;
-
-    constructor(id, label, color, position, action, nextId) {
-        this.id = id;
-        this.label = label;
-        this.color = color;
-        this.position = position;
-        this.action = action;
-        this.nextId = nextId;
-
-        let elem = document.createElement("div");
-        elem.id = "sq_".concat(id);
-        elem.className = CLASS_BOARD_SQUARE;
-        elem.textContent = label;
-        elem.style.cssText = `top: ${position.y}px;
-            left: ${position.x}px;
-            background-color: #${(color).toString(16).padStart(6, '0')}`;
-        elem.draggable = true;
-        elem.addEventListener("dragend", this.onDragEnd.bind(this));
-        this.element = elem;
-    }
-
-    onDragEnd(event) {
-        this.position.x += event.layerX;
-        this.position.y += event.layerY;
-        this.update();
-    }
-
-    update() {
-        this.element.style.left = this.position.x + "px";
-        this.element.style.top = this.position.y + "px";
-    }
-}
+let board = new Board(boardDiv);
+let boardUnsavedChanges = false;
 
 function newBoard() {
-    boardLayout = {
+    board.layout = {
         "doof": new BoardSquare("doof",
             "Doof",
             0x808080,
@@ -66,31 +25,29 @@ function newBoard() {
             null
         )
     };
-    board.replaceChildren();
-    board.appendChild(boardLayout.doof.element);
-    board.appendChild(boardLayout.daf.element);
+    board.rebuildLayout();
     console.log("Created new board.");
 }
 
 function loadBoard(name) {
-    let layoutJson = window.localStorage.getItem("boardLayout_" + name);
-    board.replaceChildren();
-    if (layoutJson !== null ) {
-        let rawLayout = JSON.parse(layoutJson);
-        for (sqId in rawLayout) {
-            let a = rawLayout[sqId];
-            let sq = new BoardSquare(sqId, a.label, a.color, a.position, a.action, a.nextId);
-            board.appendChild(sq.element);
-            boardLayout[sqId] = sq;
+    boardUnsavedChanges = false;
+    let success = board.loadLayout(name);
+    if (success) {
+        for (let sqId in board.layout) {
+            console.log(sqId);
+            let sq = board.layout[sqId];
+            let elem = sq.element;
+            elem.draggable = true;
+            elem.addEventListener("dragend", onSquareDragEnd.bind(sq)); // Event listener is bound to Square object so it acts
+                                                                        // like a class method
         }
-        console.log("Loaded board.");
-        return true;
     }
-    return false;
+    return success;
 }
 
 function saveBoard(name) {
-    window.localStorage.setItem("boardLayout_" + name, JSON.stringify(boardLayout));
+    window.localStorage.setItem("boardLayout_" + name, JSON.stringify(board.layout));
+    boardUnsavedChanges = false;
 }
 
 function onPageLoad(event) {
@@ -105,11 +62,21 @@ function onPageLoad(event) {
     if (!loadBoard("test"))
         newBoard();
     
+    playLink.href += "#test";
     appContainer.style = null; // Show GUI
 }
 
 function onPageUnload(event) {
-    // TODO: May need later.
+    if (boardUnsavedChanges)
+        event.preventDefault(); // Trigger unsaved changes confirmation dialog.
+}
+
+function onSquareDragEnd(event) {
+    let square = this; // 'this' is bound to the assoiated Square object.
+    square.position.x += event.layerX;
+    square.position.y += event.layerY;
+    square.update();
+    boardUnsavedChanges = true;
 }
 
 window.addEventListener("load", onPageLoad);
