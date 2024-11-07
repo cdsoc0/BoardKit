@@ -106,16 +106,10 @@ function onPageLoad(event) {
         newBoard();
     
     appContainer.style = null; // Show GUI
-    // for (sqId in boardLayout) {
-    //     let sq = boardLayout[sqId];
-    //     let nextId = rawLayout[sqId].nextId;
-    //     if (nextId != null)
-    //         sq.next = boardLayout[nextId];
-    // }
 }
 
 function onPageUnload(event) {
-    // window.localStorage.setItem("boardLayout", JSON.stringify(boardLayout));
+    // TODO: May need later.
 }
 
 window.addEventListener("load", onPageLoad);
