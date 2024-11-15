@@ -1,4 +1,21 @@
 const CLASS_BOARD_SQUARE = "boardSquare"
+const ActionType = Object.freeze({
+    GO_FORWARD: "goForward",
+    JUMP_TO: "jumpTo",
+    ANOTHER_TURN: "anotherTurn",
+});
+
+class Action {
+    type;
+    parameters = [];
+
+    constructor(type, ...parameters) {
+        if (!ActionType.hasOwnProperty(type))
+            throw new TypeError("Invalid action type");
+        this.type = type;
+        this.parameters = parameters;
+    }
+}
 
 class BoardSquare {
     id = "";
@@ -39,10 +56,12 @@ class BoardSquare {
 }
 
 class Board {
+    name = "";
     layout = {};
     div;
 
-    constructor(div) {
+    constructor(name, div) {
+        this.name = name;
         this.div = div;
     }
 
@@ -57,6 +76,7 @@ class Board {
                 this.layout[sqId] = sq;
             }
             this.rebuildLayout();
+            this.name = name;
             console.log("Loaded board.");
             return true;
         }

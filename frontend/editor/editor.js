@@ -1,11 +1,14 @@
+const PLAYER_URL_BASE = "../player?board="
+
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
 const newBtn = document.getElementById("newBtn");
 const loadBtn = document.getElementById("loadBtn");
 const saveBtn = document.getElementById("saveBtn");
 const playLink = document.getElementById("playLink");
+const nameBox = document.getElementById("nameBox");
 const supportErrors = document.querySelectorAll(".supportError");
-let board = new Board(boardDiv);
+let board = new Board("Untitled", boardDiv);
 let boardUnsavedChanges = false;
 
 function newBoard() {
@@ -30,9 +33,11 @@ function newBoard() {
 }
 
 function loadBoard(name) {
-    boardUnsavedChanges = false;
     let success = board.loadLayout(name);
     if (success) {
+        boardUnsavedChanges = false;
+        nameBox.value = name;
+        playLink.href = PLAYER_URL_BASE + name;
         for (let sqId in board.layout) {
             console.log(sqId);
             let sq = board.layout[sqId];
@@ -59,10 +64,11 @@ function onPageLoad(event) {
     for (err of supportErrors) // Remove errors.
         err.remove();
 
-    if (!loadBoard("test"))
+    let params = new URLSearchParams(window.location.search);
+    if (!loadBoard(params.get("board"))) // Load specified board
         newBoard();
     
-    playLink.href += "#test";
+    playLink.href = PLAYER_URL_BASE + board.name;
     appContainer.style = null; // Show GUI
 }
 
@@ -79,8 +85,13 @@ function onSquareDragEnd(event) {
     boardUnsavedChanges = true;
 }
 
+function onNameBoxChange(event) {
+    board.name = nameBox.value;
+}
+
 window.addEventListener("load", onPageLoad);
 window.addEventListener("beforeunload", onPageUnload);
 newBtn.addEventListener("click", (ev) => newBoard());
-loadBtn.addEventListener("click", (ev) => loadBoard("test"));
-saveBtn.addEventListener("click", (ev) => saveBoard("test"));
+loadBtn.addEventListener("click", (ev) => loadBoard(board.name));
+saveBtn.addEventListener("click", (ev) => saveBoard(board.name));
+nameBox.addEventListener("change", onNameBoxChange)
