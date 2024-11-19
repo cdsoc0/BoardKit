@@ -4,11 +4,18 @@ const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
 const editLink = document.getElementById("editLink");
 const rollBtn = document.getElementById("rollBtn");
+const rollTxt = document.getElementById("rollTxt");
 const supportErrors = document.querySelectorAll(".supportError");
 let board = new Board("", boardDiv);
 
+function randint(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+  }
+
 function loadBoard(name) {
-    let success = board.loadLayout(name);
+    let success = board.load(name);
     editLink.href = EDITOR_URL_BASE + board.name;
     return success;
 }
@@ -31,6 +38,8 @@ function onPageLoad(event) {
 }
 
 function onRollClicked(event) {
+    let roll = randint(1, 7);
+    rollTxt.textContent = roll.toString();
     
 }
 

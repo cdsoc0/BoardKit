@@ -12,7 +12,7 @@ let board = new Board("Untitled", boardDiv);
 let boardUnsavedChanges = false;
 
 function newBoard() {
-    board.layout = {
+    board.squares = {
         "doof": new BoardSquare("doof",
             "Doof",
             0x808080,
@@ -29,30 +29,36 @@ function newBoard() {
         )
     };
     board.rebuildLayout();
+    setupBoard();
     console.log("Created new board.");
 }
 
 function loadBoard(name) {
-    let success = board.loadLayout(name);
+    let success = board.load(name);
     if (success) {
-        boardUnsavedChanges = false;
-        nameBox.value = name;
-        playLink.href = PLAYER_URL_BASE + name;
-        for (let sqId in board.layout) {
-            console.log(sqId);
-            let sq = board.layout[sqId];
-            let elem = sq.element;
-            elem.draggable = true;
-            elem.addEventListener("dragend", onSquareDragEnd.bind(sq)); // Event listener is bound to Square object so it acts
-                                                                        // like a class method
-        }
+        setupBoard();
     }
     return success;
 }
 
 function saveBoard(name) {
-    window.localStorage.setItem("boardLayout_" + name, JSON.stringify(board.layout));
+    window.localStorage.setItem("boardLayout_" + name, JSON.stringify(board.squares));
+    window.localStorage.setItem("board_" + name, JSON.stringify(board));
     boardUnsavedChanges = false;
+}
+
+function setupBoard() {
+    boardUnsavedChanges = false;
+    nameBox.value = board.name;
+    playLink.href = PLAYER_URL_BASE + board.name;
+    for (let sqId in board.squares) {
+        console.log(sqId);
+        let sq = board.squares[sqId];
+        let elem = sq.element;
+        elem.draggable = true;
+        elem.addEventListener("dragend", onSquareDragEnd.bind(sq)); // Event listener is bound to Square object so it acts
+                                                                    // like a class method
+    }
 }
 
 function onPageLoad(event) {

@@ -27,3 +27,15 @@ html, body {
     min-width: 2cm;
     min-height: 2cm;
 }
+
+.playerToken {
+    --color: red;
+    background-color: var(--color);
+    position: absolute;
+    border-radius: 50%;
+    outline-style: solid;
+    outline-color: gray;
+    outline-width: thin;
+    width: 1cm;
+    height: 1cm;
+}
