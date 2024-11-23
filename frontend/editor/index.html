@@ -11,16 +11,43 @@
         <p class="supportError">BoardKit requires JavaScript to be enabled and at least Chrome 86, Firefox 78, Safari 14 or equivalent.</p>
          <!-- This is horrid. -->
         <div id="appContainer" style="display: none;">
-            <button id="newBtn">New</button>
-            <input id="nameBox" type="text" placeholder="Project Name">
-            <button id="loadBtn">Load</button>
-            <button id="saveBtn">Save</button>
+            <div id="fileTools">
+                <button id="newBtn">New</button>
+                <input id="nameBox" type="text" placeholder="Project Name">
+                <button id="loadBtn">Load</button>
+                <button id="saveBtn">Save</button>
+            </div>
+            <div id="editTools">
+                <button id="editAddSqBtn">Add square</button>
+            </div>
             <a id="playLink" href="../player">Play</a>
             <div id="boardContainer">
                 <div id="board">
                 <!-- Dynamic content inserted here. -->
                 </div>
             </div>
+            <dialog id="addSqDialog">
+                <h1>Add Square</h1>
+                <form id="addSqDialogForm" method="dialog">
+                    <label for="sqId">Square ID: </label>
+                    <input type="text" name="sqId" required><br>
+                    <label for="sqLabel">Square Label: </label>
+                    <input type="text" name="sqLabel" required><br>
+                    <label for="sqColor">Square Color:</label>
+                    <input type="color" name="sqColor" value="#808080" required><br>
+                    <label for="sqActionType">Landing Action: </label>
+                    <select name="sqActionType">
+                        <option value="none">Do nothing</option>
+                        <option value="goForward">Player goes forward a number of spaces</option>
+                        <option value="jumpTo">Player jumps to a specific square</option>
+                        <option value="anotherTurn">Player gets another turn</option>
+                        <option value="endGame">Game ends</option>
+                    </select><br>
+                    <label for="sqActionParam">Landing Action Parameter: </label><br>
+                    <input type="submit" value="Done">
+                    <input type="reset" value="Cancel">
+                </form>
+            </dialog>
         </div>
         
         <script src="../shared.js"></script>

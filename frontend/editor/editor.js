@@ -7,6 +7,9 @@ const loadBtn = document.getElementById("loadBtn");
 const saveBtn = document.getElementById("saveBtn");
 const playLink = document.getElementById("playLink");
 const nameBox = document.getElementById("nameBox");
+const editAddSqBtn = document.getElementById("editAddSqBtn");
+const addSqDialog = document.getElementById("addSqDialog");
+const addSqDialogForm = document.getElementById("addSqDialogForm");
 const supportErrors = document.querySelectorAll(".supportError");
 let board = new Board("Untitled", boardDiv);
 let boardUnsavedChanges = false;
@@ -15,14 +18,14 @@ function newBoard() {
     board.squares = {
         "doof": new BoardSquare("doof",
             "Doof",
-            0x808080,
+            "#808080",
             {"x": 20, "y": 40},
             null,
             "daf"
         ),
         "daf": new BoardSquare("daf",
             "Daf",
-            0x808080,
+            "#808080",
             {"x": 90, "y": 120},
             null,
             null
@@ -54,11 +57,15 @@ function setupBoard() {
     for (let sqId in board.squares) {
         console.log(sqId);
         let sq = board.squares[sqId];
-        let elem = sq.element;
-        elem.draggable = true;
-        elem.addEventListener("dragend", onSquareDragEnd.bind(sq)); // Event listener is bound to Square object so it acts
-                                                                    // like a class method
+        makeSquareDragable(sq);
     }
+}
+
+function makeSquareDragable(square) {
+    let elem = square.element;
+    elem.draggable = true;
+    elem.addEventListener("dragend", onSquareDragEnd.bind(square)); // Event listener is bound to Square object so it acts
+                                                                // like a class method
 }
 
 function onPageLoad(event) {
@@ -95,9 +102,26 @@ function onNameBoxChange(event) {
     board.name = nameBox.value;
 }
 
+function onAddSquareButtonClicked(event) {
+    addSqDialog.showModal();
+}
+
+function onAddSquareDialogSubmitted(event) {
+    let fd = new FormData(event.target);
+    let newSqId = fd.get("sqId");
+    let newSqAction = new Action(fd.get("sqActionType"), fd.get("sqActionParam"));
+    let newSq = new BoardSquare(newSqId, fd.get("sqLabel"), fd.get("sqColor"), new Vector2(10, 10), newSqAction, "");
+    board.squares[newSqId] = newSq;
+    board.rebuildLayout();
+    makeSquareDragable(newSq);
+    boardUnsavedChanges = true;
+}
+
 window.addEventListener("load", onPageLoad);
 window.addEventListener("beforeunload", onPageUnload);
 newBtn.addEventListener("click", (ev) => newBoard());
 loadBtn.addEventListener("click", (ev) => loadBoard(board.name));
 saveBtn.addEventListener("click", (ev) => saveBoard(board.name));
 nameBox.addEventListener("change", onNameBoxChange)
+editAddSqBtn.addEventListener("click", onAddSquareButtonClicked);
+addSqDialogForm.addEventListener("submit", onAddSquareDialogSubmitted);

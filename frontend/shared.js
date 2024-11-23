@@ -1,6 +1,7 @@
 const CLASS_BOARD_SQUARE = "boardSquare";
 const CLASS_PLAYER_TOKEN = "playerToken";
 const ActionType = Object.freeze({
+    NONE: "none",
     GO_FORWARD: "goForward",
     JUMP_TO: "jumpTo",
     ANOTHER_TURN: "anotherTurn",
@@ -21,12 +22,20 @@ function colorIntToHex(colorInt) {
     return (colorInt).toString(16).padStart(6, '0');
 }
 
+function strIsValidActionType(typeName) {
+    for (key in ActionType) {
+        if (ActionType[key] === typeName)
+            return true;
+    }
+    return false;
+}
+
 class Action {
     type;
     parameters = [];
 
     constructor(type, ...parameters) {
-        if (!ActionType.hasOwnProperty(type))
+        if (!strIsValidActionType(type))
             throw new TypeError("Invalid action type");
         this.type = type;
         this.parameters = parameters;
@@ -34,7 +43,7 @@ class Action {
 }
 
 class BoardObject {
-    color = 0;
+    color = "#000000";
     position = new Vector2(0, 0);
     element;
 
@@ -51,9 +60,9 @@ class BoardObject {
 class BoardSquare extends BoardObject {
     id = "";
     label = "";
-    color = 0;
+    color = "#000000";
     position = new Vector2(0, 0);
-    action = null;
+    action = "none";
     element;
     nextId;
 
@@ -72,7 +81,7 @@ class BoardSquare extends BoardObject {
         elem.textContent = label;
         elem.style.cssText = `top: ${position.y}px;
             left: ${position.x}px;
-            background-color: #${colorIntToHex(color)}`;
+            background-color: ${color}`;
         
         this.element = elem;
     } 
@@ -80,7 +89,7 @@ class BoardSquare extends BoardObject {
 
 class Player extends BoardObject {
     name = "";
-    color = 0;
+    color = "#000000";
     position = new Vector2(0, 0);
     score = 0;
     element;
@@ -96,7 +105,7 @@ class Player extends BoardObject {
         elem.className = CLASS_PLAYER_TOKEN;
         elem.style.cssText = `top: ${position.y}px;
             left: ${position.x}px;
-            --color: #${colorIntToHex(color)}`;
+            --color: ${color}`;
         this.element = elem;
     }
 }
