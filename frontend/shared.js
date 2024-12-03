@@ -58,7 +58,7 @@ class BoardObject {
 }
 
 class BoardSquare extends BoardObject {
-    id = "";
+    id = 0;
     label = "";
     color = "#000000";
     position = new Vector2(0, 0);
@@ -113,12 +113,14 @@ class Player extends BoardObject {
 class Board {
     name = "";
     squares = {};
+    squareNextId = 0;
     players = [new Player("foo", 0, new Vector2(10, 10))];
     div;
 
     constructor(name, div) {
         this.name = name;
         this.div = div;
+        this.squareNextId = 0;
     }
 
     load(name) {
@@ -127,6 +129,7 @@ class Board {
         if (boardJson !== null ) {
             let data = JSON.parse(boardJson);
             this.name = data.name;
+            this.squareNextId = data.squareNextId;
             // Create the actual objects from the seriziled form.
             for (let sqId in data.squares) {
                 let a = data.squares[sqId];
@@ -137,7 +140,6 @@ class Board {
                 this.players.push(new Player(plr.name, plr.color, plr.position));
             }
             this.rebuildLayout(); // Update DOM
-            //this.name = name;
             console.log("Loaded board.");
             return true;
         }

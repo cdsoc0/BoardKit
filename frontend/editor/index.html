@@ -27,14 +27,13 @@
                 </div>
             </div>
             <dialog id="addSqDialog">
-                <h1>Add Square</h1>
+                <h1>Configure Square</h1>
                 <form id="addSqDialogForm" method="dialog">
-                    <label for="asdfId">Square ID: </label>
-                    <input type="text" id="asdfId" name="sqId" required><br>
+                    <input id="asdfId" type="hidden" name="sqId" required>
                     <label for="asdfLabel">Square Label: </label>
-                    <input type="text" id="asdfLabel" name="sqLabel" required><br>
+                    <input id="asdfLabel" type="text" name="sqLabel" required><br>
                     <label for="asdfColor">Square Color:</label>
-                    <input type="color" id="asdfColor" name="sqColor" value="#808080" required><br>
+                    <input id="asdfColor" type="color" name="sqColor" value="#808080" required><br>
                     <label for="asdfActionType">Landing Action: </label>
                     <select id="asdfActionType" name="sqActionType">
                         <option value="none">Do nothing</option>

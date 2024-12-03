@@ -11,6 +11,11 @@ const nameBox = document.getElementById("nameBox");
 const editAddSqBtn = document.getElementById("editAddSqBtn");
 const addSqDialog = document.getElementById("addSqDialog");
 const addSqDialogForm = document.getElementById("addSqDialogForm");
+const asdfId = document.getElementById("asdfId");
+const asdfLabel = document.getElementById("asdfLabel");
+const asdfColor = document.getElementById("asdfColor");
+const asdfActionType = document.getElementById("asdfActionType");
+const asdfActionParam = document.getElementById("asdfActionParam");
 const supportErrors = document.querySelectorAll(".supportError");
 let board = new Board("Untitled", boardDiv);
 let boardUnsavedChanges = false;
@@ -30,8 +35,7 @@ function loadBoard(name) {
 }
 
 function saveBoard(name) {
-    //window.localStorage.setItem("boardLayout_" + name, JSON.stringify(board.squares));
-    window.localStorage.setItem("board_" + name, JSON.stringify(board));
+    window.localStorage.setItem("board_" + name, JSON.stringify(board)); // Save the board data as JSON.
     boardUnsavedChanges = false;
 }
 
@@ -42,15 +46,32 @@ function setupBoard() {
     for (let sqId in board.squares) {
         console.log(sqId);
         let sq = board.squares[sqId];
-        makeSquareDragable(sq);
+        setupSquareElement(sq);
     }
 }
 
-function makeSquareDragable(square) {
+function setupSquareElement(square) {
     let elem = square.element;
     elem.draggable = true;
-    elem.addEventListener("dragend", onSquareDragEnd.bind(square)); // Event listener is bound to Square object so it acts
-                                                                // like a class method
+
+    // Setup event handlers. All of these event handlers are closures so the square object is easily accessable within each.
+    elem.addEventListener("dragend", (event) => {
+        square.position.x += event.layerX;
+        square.position.y += event.layerY;
+        square.update();
+        boardUnsavedChanges = true;
+    });
+    elem.addEventListener("contextmenu", (event) => {
+        // Set the form inputs.
+        asdfId.value = square.id;
+        asdfLabel.value = square.label;
+        asdfColor.value = square.color;
+        asdfActionType.value = square.action.type;
+        if (square.action.parameters.length > 0)
+            asdfActionParam.value = square.action.parameters[0];
+        // Reshow the add dialog.
+        addSqDialog.showModal();
+    });
 }
 
 function onPageLoad(event) {
@@ -75,42 +96,34 @@ function onPageUnload(event) {
         event.preventDefault(); // Trigger unsaved changes confirmation dialog.
 }
 
-function onSquareDragEnd(event) {
-    let square = this; // 'this' is bound to the assoiated Square object.
-    square.position.x += event.layerX;
-    square.position.y += event.layerY;
-    square.update();
-    boardUnsavedChanges = true;
-}
-
 function onNameBoxChange(event) {
-    board.name = nameBox.value;
+    board.name = nameBox.value; // Update name when user changes it.
 }
 
 function onAddSquareButtonClicked(event) {
+    asdfId.value = board.squareNextId; // Set the hidden form input
+    board.squareNextId++;
     addSqDialog.showModal();
 }
 
-function onAddSquareFormSubmitted(event) {
-
-}
-
 function onAddSquareDialogClosed(event) {
-    let fd, btnName, newSq, newSqId, newSqAction;
-    console.log(event.target.returnValue);
+    let fd, btnName, newSq, newSqId, newSqAction, newSqPos;
     btnName = event.target.returnValue;
     if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
         return;
-    fd = new FormData(addSqDialogForm);
-    for (k of fd.entries())
-        console.log(k);
     
+    fd = new FormData(addSqDialogForm);
     newSqId = fd.get("sqId");
     newSqAction = new Action(fd.get("sqActionType"), fd.get("sqActionParam"));
-    newSq = new BoardSquare(newSqId, fd.get("sqLabel"), fd.get("sqColor"), new Vector2(10, 10), newSqAction, "");
+    if (board.squares.hasOwnProperty(newSqId)) // Don't reset the position of an already existing square.
+        newSqPos = board.squares[newSqId].position;
+    else 
+        newSqPos = new Vector2(10, 10);
+    
+    newSq = new BoardSquare(newSqId, fd.get("sqLabel"), fd.get("sqColor"), newSqPos, newSqAction, "");
     board.squares[newSqId] = newSq;
     board.rebuildLayout();
-    makeSquareDragable(newSq);
+    setupSquareElement(newSq);
     boardUnsavedChanges = true;
 }
 
@@ -121,5 +134,4 @@ loadBtn.addEventListener("click", (ev) => loadBoard(board.name));
 saveBtn.addEventListener("click", (ev) => saveBoard(board.name));
 nameBox.addEventListener("change", onNameBoxChange)
 editAddSqBtn.addEventListener("click", onAddSquareButtonClicked);
-addSqDialogForm.addEventListener("submit", onAddSquareFormSubmitted);
 addSqDialog.addEventListener("close", onAddSquareDialogClosed);
