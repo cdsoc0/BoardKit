@@ -1,4 +1,5 @@
-const PLAYER_URL_BASE = "../player?board="
+const PLAYER_URL_BASE = "../player?board=";
+const DIALOG_BUTTON_OK = "OK";
 
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
@@ -15,22 +16,6 @@ let board = new Board("Untitled", boardDiv);
 let boardUnsavedChanges = false;
 
 function newBoard() {
-    board.squares = {
-        "doof": new BoardSquare("doof",
-            "Doof",
-            "#808080",
-            {"x": 20, "y": 40},
-            null,
-            "daf"
-        ),
-        "daf": new BoardSquare("daf",
-            "Daf",
-            "#808080",
-            {"x": 90, "y": 120},
-            null,
-            null
-        )
-    };
     board.rebuildLayout();
     setupBoard();
     console.log("Created new board.");
@@ -45,7 +30,7 @@ function loadBoard(name) {
 }
 
 function saveBoard(name) {
-    window.localStorage.setItem("boardLayout_" + name, JSON.stringify(board.squares));
+    //window.localStorage.setItem("boardLayout_" + name, JSON.stringify(board.squares));
     window.localStorage.setItem("board_" + name, JSON.stringify(board));
     boardUnsavedChanges = false;
 }
@@ -106,11 +91,23 @@ function onAddSquareButtonClicked(event) {
     addSqDialog.showModal();
 }
 
-function onAddSquareDialogSubmitted(event) {
-    let fd = new FormData(event.target);
-    let newSqId = fd.get("sqId");
-    let newSqAction = new Action(fd.get("sqActionType"), fd.get("sqActionParam"));
-    let newSq = new BoardSquare(newSqId, fd.get("sqLabel"), fd.get("sqColor"), new Vector2(10, 10), newSqAction, "");
+function onAddSquareFormSubmitted(event) {
+
+}
+
+function onAddSquareDialogClosed(event) {
+    let fd, btnName, newSq, newSqId, newSqAction;
+    console.log(event.target.returnValue);
+    btnName = event.target.returnValue;
+    if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
+        return;
+    fd = new FormData(addSqDialogForm);
+    for (k of fd.entries())
+        console.log(k);
+    
+    newSqId = fd.get("sqId");
+    newSqAction = new Action(fd.get("sqActionType"), fd.get("sqActionParam"));
+    newSq = new BoardSquare(newSqId, fd.get("sqLabel"), fd.get("sqColor"), new Vector2(10, 10), newSqAction, "");
     board.squares[newSqId] = newSq;
     board.rebuildLayout();
     makeSquareDragable(newSq);
@@ -124,4 +121,5 @@ loadBtn.addEventListener("click", (ev) => loadBoard(board.name));
 saveBtn.addEventListener("click", (ev) => saveBoard(board.name));
 nameBox.addEventListener("change", onNameBoxChange)
 editAddSqBtn.addEventListener("click", onAddSquareButtonClicked);
-addSqDialogForm.addEventListener("submit", onAddSquareDialogSubmitted);
+addSqDialogForm.addEventListener("submit", onAddSquareFormSubmitted);
+addSqDialog.addEventListener("close", onAddSquareDialogClosed);

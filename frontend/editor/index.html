@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-GB">
     <head>
         <meta charset="utf-8">
         <title>BoardKit Prototype</title>
@@ -29,23 +29,24 @@
             <dialog id="addSqDialog">
                 <h1>Add Square</h1>
                 <form id="addSqDialogForm" method="dialog">
-                    <label for="sqId">Square ID: </label>
-                    <input type="text" name="sqId" required><br>
-                    <label for="sqLabel">Square Label: </label>
-                    <input type="text" name="sqLabel" required><br>
-                    <label for="sqColor">Square Color:</label>
-                    <input type="color" name="sqColor" value="#808080" required><br>
-                    <label for="sqActionType">Landing Action: </label>
-                    <select name="sqActionType">
+                    <label for="asdfId">Square ID: </label>
+                    <input type="text" id="asdfId" name="sqId" required><br>
+                    <label for="asdfLabel">Square Label: </label>
+                    <input type="text" id="asdfLabel" name="sqLabel" required><br>
+                    <label for="asdfColor">Square Color:</label>
+                    <input type="color" id="asdfColor" name="sqColor" value="#808080" required><br>
+                    <label for="asdfActionType">Landing Action: </label>
+                    <select id="asdfActionType" name="sqActionType">
                         <option value="none">Do nothing</option>
                         <option value="goForward">Player goes forward a number of spaces</option>
                         <option value="jumpTo">Player jumps to a specific square</option>
                         <option value="anotherTurn">Player gets another turn</option>
                         <option value="endGame">Game ends</option>
                     </select><br>
-                    <label for="sqActionParam">Landing Action Parameter: </label><br>
-                    <input type="submit" value="Done">
-                    <input type="reset" value="Cancel">
+                    <label for="asdfActionParam">Landing Action Parameter: </label>
+                    <input id="asdfActionParam" name="sqActionParam"><br>
+                    <input type="submit" name="dlBtn" value="OK">
+                    <input type="submit" name="dlBtn" value="Cancel" formnovalidate>
                 </form>
             </dialog>
         </div>
