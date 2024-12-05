@@ -1,56 +1,98 @@
 <!DOCTYPE html>
 <html lang="en-GB">
-    <head>
-        <meta charset="utf-8">
-        <title>BoardKit Prototype</title>
-        <link rel="stylesheet" href="../base.css">
-        <link rel="stylesheet" href="editor.css">
-    </head>
-    <body>
-        <h1>BoardKit Editor Prototype</h1>
-        <p class="supportError">BoardKit requires JavaScript to be enabled and at least Chrome 86, Firefox 78, Safari 14 or equivalent.</p>
-         <!-- This is horrid. -->
-        <div id="appContainer" style="display: none;">
-            <div id="fileTools">
-                <button id="newBtn">New</button>
-                <input id="nameBox" type="text" placeholder="Project Name">
-                <button id="loadBtn">Load</button>
-                <button id="saveBtn">Save</button>
-            </div>
-            <div id="editTools">
-                <button id="editAddSqBtn">Add square</button>
-            </div>
-            <a id="playLink" href="../player">Play</a>
-            <div id="boardContainer">
-                <div id="board">
-                <!-- Dynamic content inserted here. -->
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BoardKit Prototype</title>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css"
+        integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"
+        integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ"
+        crossorigin="anonymous"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"
+        integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
+        crossorigin="anonymous"></script>
+    <!-- Custom -->
+    <link rel="stylesheet" href="../base.css">
+    <link rel="stylesheet" href="editor.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-default">
+        <a class="navbar-brand" href="/">BoardKit Editor</a>
+        <ul class="nav navbar-nav">
+            <li>
+                <div class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                        aria-expanded="false">File <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a id="newBtn" href="#">New</a></li>
+                        <li><a id="loadBtn" href="#">Load...</a></li>
+                        <li><a id="saveBtn" href="#">Save</a></li>
+                        <li><a id="saveAsBtn" href="#">Save as...</a></li>
+                        <!-- <li role="separator" class="divider"></li> -->
+
+                    </ul>
                 </div>
-            </div>
-            <dialog id="addSqDialog">
-                <h1>Configure Square</h1>
-                <form id="addSqDialogForm" method="dialog">
-                    <input id="asdfId" type="hidden" name="sqId" required>
-                    <label for="asdfLabel">Square Label: </label>
-                    <input id="asdfLabel" type="text" name="sqLabel" required><br>
-                    <label for="asdfColor">Square Color:</label>
-                    <input id="asdfColor" type="color" name="sqColor" value="#808080" required><br>
-                    <label for="asdfActionType">Landing Action: </label>
-                    <select id="asdfActionType" name="sqActionType">
-                        <option value="none">Do nothing</option>
-                        <option value="goForward">Player goes forward a number of spaces</option>
-                        <option value="jumpTo">Player jumps to a specific square</option>
-                        <option value="anotherTurn">Player gets another turn</option>
-                        <option value="endGame">Game ends</option>
-                    </select><br>
-                    <label for="asdfActionParam">Landing Action Parameter: </label>
-                    <input id="asdfActionParam" name="sqActionParam"><br>
-                    <input type="submit" name="dlBtn" value="OK">
-                    <input type="submit" name="dlBtn" value="Cancel" formnovalidate>
-                </form>
-            </dialog>
+            </li>
+            <!-- <span id="fileTools" class="form-group"> -->
+
+
+            <!-- <button id="loadBtn" class="btn btn-default">Load</button>
+                <button id="saveBtn" class="btn btn-default">Save</button> -->
+            <!-- </span> -->
+
+            <!-- <li class="active"><a href="#">Edit <span class="sr-only">(current)</span></a></li> -->
+            <li><input id="nameBox" class="form-control" type="text" placeholder="Project Name"></li>
+            <li><a id="playLink" href="../player">Play</a></li>
+        </ul>
+
+    </nav>
+    <p class="supportError">BoardKit requires JavaScript to be enabled and at least Chrome 86, Firefox 78, Safari 14 or
+        equivalent.</p>
+    <!-- This is horrid. -->
+    <div id="appContainer" style="display: none;">
+
+        <div id="editTools">
+            <button id="editAddSqBtn">Add square</button>
         </div>
-        
-        <script src="../shared.js"></script>
-        <script src="editor.js"></script>
-    </body>
+
+        <div id="boardContainer">
+            <div id="board">
+                <!-- Dynamic content inserted here. -->
+            </div>
+        </div>
+        <dialog id="addSqDialog">
+            <h1>Configure Square</h1>
+            <form id="addSqDialogForm" method="dialog">
+                <input id="asdfId" type="hidden" name="sqId" required>
+                <label for="asdfLabel">Square Label: </label>
+                <input id="asdfLabel" type="text" name="sqLabel" required><br>
+                <label for="asdfColor">Square Color:</label>
+                <input id="asdfColor" type="color" name="sqColor" value="#808080" required><br>
+                <label for="asdfActionType">Landing Action: </label>
+                <select id="asdfActionType" name="sqActionType">
+                    <option value="none">Do nothing</option>
+                    <option value="goForward">Player goes forward a number of spaces</option>
+                    <option value="jumpTo">Player jumps to a specific square</option>
+                    <option value="anotherTurn">Player gets another turn</option>
+                    <option value="endGame">Game ends</option>
+                </select><br>
+                <label for="asdfActionParam">Landing Action Parameter: </label>
+                <input id="asdfActionParam" name="sqActionParam"><br>
+                <input type="submit" name="dlBtn" value="OK">
+                <input type="submit" name="dlBtn" value="Cancel" formnovalidate>
+            </form>
+        </dialog>
+    </div>
+
+    <script src="../shared.js"></script>
+    <script src="editor.js"></script>
+</body>
+
 </html>

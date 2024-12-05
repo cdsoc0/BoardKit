@@ -21,6 +21,7 @@ let board = new Board("Untitled", boardDiv);
 let boardUnsavedChanges = false;
 
 function newBoard() {
+    board = new Board("Untitled", boardDiv);
     board.rebuildLayout();
     setupBoard();
     console.log("Created new board.");
