@@ -76,9 +76,13 @@ function setupSquareElement(square) {
 }
 
 function onPageLoad(event) {
-    if (typeof Element.prototype.replaceChildren === "undefined") {
-        console.log("Browser too old!");
+    if (!apiExists(Element.prototype.replaceChildren)) {
+        console.log("replaceChildren not supported!");
         return false; // Stop load events.
+    }
+    else if (!apiExists(HTMLDialogElement)) {
+        console.log("<dialog> not supported!");
+        return false;
     }
 
     for (err of supportErrors) // Remove errors.

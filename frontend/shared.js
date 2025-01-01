@@ -30,6 +30,10 @@ function strIsValidActionType(typeName) {
     return false;
 }
 
+function apiExists(object) {
+    return typeof object !== "undefined";
+}
+
 class Action {
     type;
     parameters = [];
