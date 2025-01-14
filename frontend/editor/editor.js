@@ -132,6 +132,10 @@ function onAddSquareDialogClosed(event) {
     boardUnsavedChanges = true;
 }
 
+function onAddSquareDialogCanceled(event) {
+    event.target.returnValue = "esc"; // Act like the cancel button was pressed upon Escape being pressed.
+}
+
 window.addEventListener("load", onPageLoad);
 window.addEventListener("beforeunload", onPageUnload);
 newBtn.addEventListener("click", (ev) => newBoard());
@@ -140,3 +144,4 @@ saveBtn.addEventListener("click", (ev) => saveBoard(board.name));
 nameBox.addEventListener("change", onNameBoxChange)
 editAddSqBtn.addEventListener("click", onAddSquareButtonClicked);
 addSqDialog.addEventListener("close", onAddSquareDialogClosed);
+addSqDialog.addEventListener("cancel", onAddSquareDialogCanceled);
