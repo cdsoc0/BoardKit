@@ -3,11 +3,13 @@ const DIALOG_BUTTON_OK = "OK";
 
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
+
 const newBtn = document.getElementById("newBtn");
 const loadBtn = document.getElementById("loadBtn");
 const saveBtn = document.getElementById("saveBtn");
 const playLink = document.getElementById("playLink");
 const nameBox = document.getElementById("nameBox");
+
 const editAddSqBtn = document.getElementById("editAddSqBtn");
 const addSqDialog = document.getElementById("addSqDialog");
 const addSqDialogForm = document.getElementById("addSqDialogForm");
@@ -16,6 +18,10 @@ const asdfLabel = document.getElementById("asdfLabel");
 const asdfColor = document.getElementById("asdfColor");
 const asdfActionType = document.getElementById("asdfActionType");
 const asdfActionParam = document.getElementById("asdfActionParam");
+const fileOpenDialog = document.getElementById("openDialog");
+const fileOpenDialogForm = document.getElementById("openDialogForm");
+const fileOpenDialogFile = document.getElementById("opdfFile");
+
 const supportErrors = document.querySelectorAll(".supportError");
 let board = new Board("Untitled", boardDiv);
 let boardUnsavedChanges = false;
@@ -27,16 +33,33 @@ function newBoard() {
     console.log("Created new board.");
 }
 
-function loadBoard(name) {
-    let success = board.load(name);
+function loadBoard(json) {
+    //let json = window.localStorage.getItem("board_" + name);
+    let success = board.loadJson(json);
     if (success) {
         setupBoard();
     }
     return success;
 }
 
-function saveBoard(name) {
-    window.localStorage.setItem("board_" + name, JSON.stringify(board)); // Save the board data as JSON.
+// function saveBoard(name) {
+//     window.localStorage.setItem("board_" + name, JSON.stringify(board)); // Save the board data as JSON.
+//     boardUnsavedChanges = false;
+// }
+
+function downloadBoardToFile(name, json) {
+    // Awful kludge. Only way I could find to do this cross-browser.
+    let file = new Blob([json], {type: "application/x-boardkit-game"});
+    let a = document.createElement("a");
+    let url = URL.createObjectURL(file);
+    a.href = url;
+    a.download = name + ".boardkit";
+    document.body.appendChild(a);
+    a.click(); // Start download.
+    setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);  
+    }, 0);
     boardUnsavedChanges = false;
 }
 
@@ -89,8 +112,8 @@ function onPageLoad(event) {
         err.remove();
 
     let params = new URLSearchParams(window.location.search);
-    if (!loadBoard(params.get("board"))) // Load specified board
-        newBoard();
+    // if (!loadBoard(params.get("board"))) // Load specified board
+    //     newBoard();
     
     playLink.href = PLAYER_URL_BASE + board.name;
     appContainer.style = null; // Show GUI
@@ -103,6 +126,10 @@ function onPageUnload(event) {
 
 function onNameBoxChange(event) {
     board.name = nameBox.value; // Update name when user changes it.
+}
+
+function onLoadBtnPressed(event) {
+    fileOpenDialog.showModal();
 }
 
 function onAddSquareButtonClicked(event) {
@@ -132,16 +159,34 @@ function onAddSquareDialogClosed(event) {
     boardUnsavedChanges = true;
 }
 
-function onAddSquareDialogCanceled(event) {
+function onFileOpenDialogClosed(event) {
+    let btnName, fd, file, reader;
+    btnName = event.target.returnValue;
+    if (btnName !== DIALOG_BUTTON_OK)
+        return;
+
+    fd = new FormData(fileOpenDialogForm);
+    file = fd.get("boardFile");
+    reader = new FileReader();
+    // Read file.
+    reader.addEventListener("loadend", (e) => {
+        loadBoard(reader.result);
+    });
+    reader.readAsText(file); // Async
+}
+
+function onDialogCanceled(event) {
     event.target.returnValue = "esc"; // Act like the cancel button was pressed upon Escape being pressed.
 }
 
 window.addEventListener("load", onPageLoad);
 window.addEventListener("beforeunload", onPageUnload);
 newBtn.addEventListener("click", (ev) => newBoard());
-loadBtn.addEventListener("click", (ev) => loadBoard(board.name));
-saveBtn.addEventListener("click", (ev) => saveBoard(board.name));
+loadBtn.addEventListener("click", onLoadBtnPressed);
+saveBtn.addEventListener("click", (ev) => downloadBoardToFile(board.name, board.saveJson()));
 nameBox.addEventListener("change", onNameBoxChange)
 editAddSqBtn.addEventListener("click", onAddSquareButtonClicked);
 addSqDialog.addEventListener("close", onAddSquareDialogClosed);
-addSqDialog.addEventListener("cancel", onAddSquareDialogCanceled);
+addSqDialog.addEventListener("cancel", onDialogCanceled);
+fileOpenDialog.addEventListener("close", onFileOpenDialogClosed);
+fileOpenDialog.addEventListener("cancel", onDialogCanceled);

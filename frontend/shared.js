@@ -1,5 +1,6 @@
 const CLASS_BOARD_SQUARE = "boardSquare";
 const CLASS_PLAYER_TOKEN = "playerToken";
+const BOARD_FORMAT_VERSION = 1;
 const ActionType = Object.freeze({
     NONE: "none",
     GO_FORWARD: "goForward",
@@ -88,7 +89,23 @@ class BoardSquare extends BoardObject {
             background-color: ${color}`;
         
         this.element = elem;
-    } 
+    }
+
+    static deserialize(id, data) {
+        return new BoardSquare(id, data.label, data.color, data.position, data.action, data.nextId);
+    }
+
+    serialize() {
+        let data = {
+            id: this.id,
+            label: this.label,
+            color: this.color,
+            position: this.position,
+            action: this.action,
+            nextId: this.nextId,
+        }
+        return data;
+    }
 }
 
 class Player extends BoardObject {
@@ -112,6 +129,19 @@ class Player extends BoardObject {
             --color: ${color}`;
         this.element = elem;
     }
+
+    static deserialize(data) {
+        return new Player(data.name, data.color, data.position);
+    }
+
+    serialize() {
+        let data = {
+            name: this.name,
+            color: this.color,
+            position: this.position,
+        }
+        return data;
+    }
 }
 
 class Board {
@@ -127,21 +157,42 @@ class Board {
         this.squareNextId = 0;
     }
 
-    load(name) {
-        let boardJson = window.localStorage.getItem("board_" + name);
-        this.clearLayout();
-        if (boardJson !== null ) {
-            let data = JSON.parse(boardJson);
+    saveJson() {
+        let data = {};
+        data.formatVersion = BOARD_FORMAT_VERSION; // Just in case...
+        data.name = this.name;
+        data.squareNextId = this.squareNextId;
+        data.squares = {};
+        for (let sqId in this.squares) {
+            data.squares[sqId] = this.squares[sqId].serialize();
+        }
+        data.players = [];
+        for (let plr of this.players) {
+            data.players.push(plr.serialize());
+        }
+        return JSON.stringify(data);
+    }
+
+    loadJson(json) {
+        let data;
+        try {
+            data = JSON.parse(json);
+        }
+        catch {
+            return false;
+        }
+        if (data !== null && data !== undefined) {
+            this.clearLayout();
             this.name = data.name;
             this.squareNextId = data.squareNextId;
             // Create the actual objects from the seriziled form.
             for (let sqId in data.squares) {
                 let a = data.squares[sqId];
-                let sq = new BoardSquare(sqId, a.label, a.color, a.position, a.action, a.nextId);
+                let sq = BoardSquare.deserialize(sqId, a);
                 this.squares[sqId] = sq;
             }
             for (let plr of data.players) {
-                this.players.push(new Player(plr.name, plr.color, plr.position));
+                this.players.push(Player.deserialize(plr));
             }
             this.rebuildLayout(); // Update DOM
             console.log("Loaded board.");
