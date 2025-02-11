@@ -1,7 +1,7 @@
 const PLAYER_URL_BASE = "../player?board=";
 const DIALOG_BUTTON_OK = "OK";
 const DIALOG_BUTTON_DELETE = "Delete";
-const STATE_NORMAL = 0;
+const STATE_SQUARE_EDIT = 0;
 const STATE_SQUARE_LINK = 1;
 
 const appContainer = document.getElementById("appContainer");
@@ -34,8 +34,9 @@ const fileOpenDialogFile = document.getElementById("opdfFile");
 
 const supportErrors = document.querySelectorAll(".supportError");
 let board = new Board("Untitled", boardDiv);
+let squaresEventAbortCon = new AbortController();
 let boardUnsavedChanges = false;
-let editorState = STATE_NORMAL;
+let editorState = STATE_SQUARE_EDIT;
 
 function newBoard() {
     board = new Board("Untitled", boardDiv);
@@ -72,6 +73,11 @@ function setupBoard() {
     boardUnsavedChanges = false;
     nameBox.value = board.name;
     playLink.href = PLAYER_URL_BASE + board.name;
+    setupSquares();
+}
+
+function setupSquares() {
+    squaresEventAbortCon = new AbortController(); // AbortControllers are one time use only.
     for (let sqId in board.squares) {
         console.log(sqId);
         let sq = board.squares[sqId];
@@ -89,7 +95,7 @@ function setupSquareElement(square) {
         square.position.y += event.layerY;
         square.update();
         boardUnsavedChanges = true;
-    });
+    }, {signal: squaresEventAbortCon.signal});
     elem.addEventListener("contextmenu", (event) => {
         // Set the form inputs.
         asdfId.value = square.id;
@@ -102,7 +108,7 @@ function setupSquareElement(square) {
         asdfDeleteBtn.style.display = "inline";
         // Reshow the add dialog.
         addSqDialog.showModal();
-    });
+    }, {signal: squaresEventAbortCon.signal});
 }
 
 function changeState(newState) {
@@ -110,10 +116,12 @@ function changeState(newState) {
 
     // Exit state.
     switch (oldState) {
-        case STATE_NORMAL:
+        case STATE_SQUARE_EDIT:
             editTools.style.display = "none";
             for (let sqId in board.squares) {
-                board.squares[sqId].element.draggable = false;
+                let e = board.squares[sqId].element;
+                e.draggable = false;
+                squaresEventAbortCon.abort();
             }
             break;
         case STATE_SQUARE_LINK:
@@ -123,11 +131,9 @@ function changeState(newState) {
 
     // Enter state.
     switch (newState) {
-        case STATE_NORMAL:
+        case STATE_SQUARE_EDIT:
             editTools.style.display = "block";
-            for (let sqId in board.squares) {
-                board.squares[sqId].element.draggable = true;
-            }
+            setupSquares();
             break;
         case STATE_SQUARE_LINK:
             linkTools.style.display = "block";
@@ -229,7 +235,7 @@ function onDialogCanceled(event) {
 }
 
 function onBackButtonClicked(event) {
-    changeState(STATE_NORMAL);
+    changeState(STATE_SQUARE_EDIT);
 }
 
 window.addEventListener("load", onPageLoad);
