@@ -1,5 +1,6 @@
 const PLAYER_URL_BASE = "../player?board=";
 const DIALOG_BUTTON_OK = "OK";
+const DIALOG_BUTTON_DELETE = "Delete";
 
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
@@ -11,6 +12,7 @@ const playLink = document.getElementById("playLink");
 const nameBox = document.getElementById("nameBox");
 
 const editAddSqBtn = document.getElementById("editAddSqBtn");
+const editLinkSqBtn = document.getElementById("editLinkSqBtn");
 const addSqDialog = document.getElementById("addSqDialog");
 const addSqDialogForm = document.getElementById("addSqDialogForm");
 const asdfId = document.getElementById("asdfId");
@@ -18,6 +20,7 @@ const asdfLabel = document.getElementById("asdfLabel");
 const asdfColor = document.getElementById("asdfColor");
 const asdfActionType = document.getElementById("asdfActionType");
 const asdfActionParam = document.getElementById("asdfActionParam");
+const asdfDeleteBtn = document.getElementById("asdfDeleteBtn");
 const fileOpenDialog = document.getElementById("openDialog");
 const fileOpenDialogForm = document.getElementById("openDialogForm");
 const fileOpenDialogFile = document.getElementById("opdfFile");
@@ -93,6 +96,8 @@ function setupSquareElement(square) {
         asdfActionType.value = square.action.type;
         if (square.action.parameters.length > 0)
             asdfActionParam.value = square.action.parameters[0];
+        // Show the 'delete' button.
+        asdfDeleteBtn.style.display = "inline";
         // Reshow the add dialog.
         addSqDialog.showModal();
     });
@@ -134,6 +139,7 @@ function onLoadBtnPressed(event) {
 
 function onAddSquareButtonClicked(event) {
     asdfId.value = board.squareNextId; // Set the hidden form input
+    asdfDeleteBtn.style.display = "none";
     board.squareNextId++;
     addSqDialog.showModal();
 }
@@ -141,11 +147,17 @@ function onAddSquareButtonClicked(event) {
 function onAddSquareDialogClosed(event) {
     let fd, btnName, newSq, newSqId, newSqAction, newSqPos;
     btnName = event.target.returnValue;
-    if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
+    if (btnName !== DIALOG_BUTTON_OK && btnName !== DIALOG_BUTTON_DELETE) // Only handle form data when user presses 'ok' button
         return;
     
     fd = new FormData(addSqDialogForm);
     newSqId = fd.get("sqId");
+    if (btnName === DIALOG_BUTTON_DELETE) {
+        delete board.squares[newSqId];
+        board.rebuildLayout();
+        return;
+    }
+
     newSqAction = new Action(fd.get("sqActionType"), fd.get("sqActionParam"));
     if (board.squares.hasOwnProperty(newSqId)) // Don't reset the position of an already existing square.
         newSqPos = board.squares[newSqId].position;
