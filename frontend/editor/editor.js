@@ -1,6 +1,8 @@
 const PLAYER_URL_BASE = "../player?board=";
 const DIALOG_BUTTON_OK = "OK";
 const DIALOG_BUTTON_DELETE = "Delete";
+const STATE_NORMAL = 0;
+const STATE_SQUARE_LINK = 1;
 
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
@@ -11,8 +13,13 @@ const saveBtn = document.getElementById("saveBtn");
 const playLink = document.getElementById("playLink");
 const nameBox = document.getElementById("nameBox");
 
+const editTools = document.getElementById("editTools");
 const editAddSqBtn = document.getElementById("editAddSqBtn");
 const editLinkSqBtn = document.getElementById("editLinkSqBtn");
+
+const linkTools = document.getElementById("linkingTools");
+const linkBackBtn = document.getElementById("linkBackBtn");
+
 const addSqDialog = document.getElementById("addSqDialog");
 const addSqDialogForm = document.getElementById("addSqDialogForm");
 const asdfId = document.getElementById("asdfId");
@@ -28,6 +35,7 @@ const fileOpenDialogFile = document.getElementById("opdfFile");
 const supportErrors = document.querySelectorAll(".supportError");
 let board = new Board("Untitled", boardDiv);
 let boardUnsavedChanges = false;
+let editorState = STATE_NORMAL;
 
 function newBoard() {
     board = new Board("Untitled", boardDiv);
@@ -37,18 +45,12 @@ function newBoard() {
 }
 
 function loadBoard(json) {
-    //let json = window.localStorage.getItem("board_" + name);
     let success = board.loadJson(json);
     if (success) {
         setupBoard();
     }
     return success;
 }
-
-// function saveBoard(name) {
-//     window.localStorage.setItem("board_" + name, JSON.stringify(board)); // Save the board data as JSON.
-//     boardUnsavedChanges = false;
-// }
 
 function downloadBoardToFile(name, json) {
     // Awful kludge. Only way I could find to do this cross-browser.
@@ -103,6 +105,37 @@ function setupSquareElement(square) {
     });
 }
 
+function changeState(newState) {
+    let oldState = editorState; // Get current state.
+
+    // Exit state.
+    switch (oldState) {
+        case STATE_NORMAL:
+            editTools.style.display = "none";
+            for (let sqId in board.squares) {
+                board.squares[sqId].element.draggable = false;
+            }
+            break;
+        case STATE_SQUARE_LINK:
+            linkTools.style.display = "none";
+            break;
+    }
+
+    // Enter state.
+    switch (newState) {
+        case STATE_NORMAL:
+            editTools.style.display = "block";
+            for (let sqId in board.squares) {
+                board.squares[sqId].element.draggable = true;
+            }
+            break;
+        case STATE_SQUARE_LINK:
+            linkTools.style.display = "block";
+            break;
+    }
+    editorState = newState;
+}
+
 function onPageLoad(event) {
     if (!apiExists(Element.prototype.replaceChildren)) {
         console.log("replaceChildren not supported!");
@@ -147,17 +180,17 @@ function onAddSquareButtonClicked(event) {
 function onAddSquareDialogClosed(event) {
     let fd, btnName, newSq, newSqId, newSqAction, newSqPos;
     btnName = event.target.returnValue;
-    if (btnName !== DIALOG_BUTTON_OK && btnName !== DIALOG_BUTTON_DELETE) // Only handle form data when user presses 'ok' button
-        return;
-    
+
     fd = new FormData(addSqDialogForm);
     newSqId = fd.get("sqId");
-    if (btnName === DIALOG_BUTTON_DELETE) {
+    if (btnName === DIALOG_BUTTON_DELETE) { // Delete square if button for it pressed.
         delete board.squares[newSqId];
         board.rebuildLayout();
         return;
     }
-
+    else if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
+        return;
+    
     newSqAction = new Action(fd.get("sqActionType"), fd.get("sqActionParam"));
     if (board.squares.hasOwnProperty(newSqId)) // Don't reset the position of an already existing square.
         newSqPos = board.squares[newSqId].position;
@@ -169,6 +202,10 @@ function onAddSquareDialogClosed(event) {
     board.rebuildLayout();
     setupSquareElement(newSq);
     boardUnsavedChanges = true;
+}
+
+function onLinkSquareButtonClicked(event) {
+    changeState(STATE_SQUARE_LINK);
 }
 
 function onFileOpenDialogClosed(event) {
@@ -191,6 +228,10 @@ function onDialogCanceled(event) {
     event.target.returnValue = "esc"; // Act like the cancel button was pressed upon Escape being pressed.
 }
 
+function onBackButtonClicked(event) {
+    changeState(STATE_NORMAL);
+}
+
 window.addEventListener("load", onPageLoad);
 window.addEventListener("beforeunload", onPageUnload);
 newBtn.addEventListener("click", (ev) => newBoard());
@@ -198,6 +239,8 @@ loadBtn.addEventListener("click", onLoadBtnPressed);
 saveBtn.addEventListener("click", (ev) => downloadBoardToFile(board.name, board.saveJson()));
 nameBox.addEventListener("change", onNameBoxChange)
 editAddSqBtn.addEventListener("click", onAddSquareButtonClicked);
+editLinkSqBtn.addEventListener("click", onLinkSquareButtonClicked);
+linkBackBtn.addEventListener("click", onBackButtonClicked);
 addSqDialog.addEventListener("close", onAddSquareDialogClosed);
 addSqDialog.addEventListener("cancel", onDialogCanceled);
 fileOpenDialog.addEventListener("close", onFileOpenDialogClosed);
