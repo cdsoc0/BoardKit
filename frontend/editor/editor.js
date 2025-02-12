@@ -16,6 +16,7 @@ const nameBox = document.getElementById("nameBox");
 const editTools = document.getElementById("editTools");
 const editAddSqBtn = document.getElementById("editAddSqBtn");
 const editLinkSqBtn = document.getElementById("editLinkSqBtn");
+const editRulesBtn = document.getElementById("editRulesBtn");
 
 const linkTools = document.getElementById("linkingTools");
 const linkBackBtn = document.getElementById("linkBackBtn");
@@ -28,9 +29,15 @@ const asdfColor = document.getElementById("asdfColor");
 const asdfActionType = document.getElementById("asdfActionType");
 const asdfActionParam = document.getElementById("asdfActionParam");
 const asdfDeleteBtn = document.getElementById("asdfDeleteBtn");
+
 const fileOpenDialog = document.getElementById("openDialog");
 const fileOpenDialogForm = document.getElementById("openDialogForm");
 const fileOpenDialogFile = document.getElementById("opdfFile");
+
+const rulesDialog = document.getElementById("rulesDialog");
+const rulesDialogForm = document.getElementById("rulesDialogForm");
+const rdfDiceMin = document.getElementById("rdfDiceMin");
+const rdfDiceMax = document.getElementById("rdfDiceMax");
 
 const supportErrors = document.querySelectorAll(".supportError");
 let board = new Board("Untitled", boardDiv);
@@ -192,6 +199,7 @@ function onAddSquareDialogClosed(event) {
     if (btnName === DIALOG_BUTTON_DELETE) { // Delete square if button for it pressed.
         delete board.squares[newSqId];
         board.rebuildLayout();
+        boardUnsavedChanges = true;
         return;
     }
     else if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
@@ -212,6 +220,26 @@ function onAddSquareDialogClosed(event) {
 
 function onLinkSquareButtonClicked(event) {
     changeState(STATE_SQUARE_LINK);
+}
+
+function onRulesButtonClicked(event) {
+    // Show existing values.
+    rdfDiceMin.value = board.rules.diceMin;
+    rdfDiceMax.value = board.rules.diceMax;
+
+    rulesDialog.showModal();
+}
+
+function onRulesDialogClosed(event) {
+    let btnName, fd;
+    btnName = event.target.returnValue;
+    if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
+        return;
+    
+    fd = new FormData(rulesDialogForm);
+    board.rules.diceMin = Number(fd.get("diceMin"));
+    board.rules.diceMax = Number(fd.get("diceMax"));
+    boardUnsavedChanges = true;
 }
 
 function onFileOpenDialogClosed(event) {
@@ -246,8 +274,11 @@ saveBtn.addEventListener("click", (ev) => downloadBoardToFile(board.name, board.
 nameBox.addEventListener("change", onNameBoxChange)
 editAddSqBtn.addEventListener("click", onAddSquareButtonClicked);
 editLinkSqBtn.addEventListener("click", onLinkSquareButtonClicked);
+editRulesBtn.addEventListener("click", onRulesButtonClicked);
 linkBackBtn.addEventListener("click", onBackButtonClicked);
 addSqDialog.addEventListener("close", onAddSquareDialogClosed);
 addSqDialog.addEventListener("cancel", onDialogCanceled);
 fileOpenDialog.addEventListener("close", onFileOpenDialogClosed);
 fileOpenDialog.addEventListener("cancel", onDialogCanceled);
+rulesDialog.addEventListener("close", onRulesDialogClosed);
+rulesDialog.addEventListener("cancel", onDialogCanceled);

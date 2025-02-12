@@ -61,6 +61,7 @@
         <div id="editTools">
             <button id="editAddSqBtn">Add square</button>
             <button id="editLinkSqBtn">Link squares</button>
+            <button id="editRulesBtn">Set rules</button>
         </div>
 
         <div id="linkingTools" style="display: none;">
@@ -99,6 +100,20 @@
             <h1>Open Project</h1>
             <form id="openDialogForm" method="dialog">
                 <input id="opdfFile" name="boardFile" type="file" accept=".boardkit" required>
+                <input type="submit" value="OK">
+                <input type="submit" value="Cancel" formnovalidate>
+            </form>
+        </dialog>
+        <dialog id="rulesDialog">
+            <h1>Set global rules</h1>
+            <form id="rulesDialogForm" method="dialog">
+                <fieldset>
+                    <legend>Dice</legend>
+                    <label for="rdfDiceMin">Minimum value:</label>
+                    <input id="rdfDiceMin" name="diceMin" type="number" value="1" required><br>
+                    <label for="rdfDiceMax">Maximum value:</label>
+                    <input id="rdfDiceMax" name="diceMax" type="number" value="6" required>
+                </fieldset>
                 <input type="submit" value="OK">
                 <input type="submit" value="Cancel" formnovalidate>
             </form>

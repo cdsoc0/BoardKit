@@ -1,6 +1,6 @@
 const CLASS_BOARD_SQUARE = "boardSquare";
 const CLASS_PLAYER_TOKEN = "playerToken";
-const BOARD_FORMAT_VERSION = 1;
+const BOARD_FORMAT_VERSION = 2;
 const ActionType = Object.freeze({
     NONE: "none",
     GO_FORWARD: "goForward",
@@ -16,6 +16,16 @@ class Vector2 {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+    }
+}
+
+class RulesData {
+    diceMin = 1;
+    diceMax = 6;
+
+    constructor(diceMin, diceMax) {
+        this.diceMin = diceMin;
+        this.diceMax = diceMax;
     }
 }
 
@@ -149,6 +159,7 @@ class Board {
     squares = {};
     squareNextId = 0;
     players = [new Player("foo", 0, new Vector2(10, 10))];
+    rules = new RulesData(1, 6);
     div;
 
     constructor(name, div) {
@@ -161,6 +172,7 @@ class Board {
         let data = {};
         data.formatVersion = BOARD_FORMAT_VERSION; // Just in case...
         data.name = this.name;
+        data.rules = this.rules;
         data.squareNextId = this.squareNextId;
         data.squares = {};
         for (let sqId in this.squares) {
@@ -173,18 +185,39 @@ class Board {
         return JSON.stringify(data);
     }
 
+    static #convertData(data) {
+        // Update older boards to the current format.
+        switch (data.formatVersion) {
+            case 1:
+                data.rules = new RulesData(1, 6); // Add rules to older boards.
+                break;
+            default:
+                throw "unsupportedFormat"; // Error
+                break;
+        }
+        return data;
+    }
+
     loadJson(json) {
         let data;
         try {
             data = JSON.parse(json);
-        }
-        catch {
+        } catch {
             return false;
         }
         if (data !== null && data !== undefined) {
+            if (data.formatVersion < BOARD_FORMAT_VERSION) {
+                try {
+                    data = Board.#convertData(data); // Try to convert from older format.
+                } catch {
+                    return false;
+                }
+            }
+
             this.clearLayout();
             this.name = data.name;
             this.squareNextId = data.squareNextId;
+            this.rules = data.rules;
             // Create the actual objects from the seriziled form.
             for (let sqId in data.squares) {
                 let a = data.squares[sqId];
