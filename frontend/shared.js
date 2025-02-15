@@ -81,8 +81,9 @@ class BoardSquare extends BoardObject {
     action = "none";
     element;
     nextId;
+    prevId;
 
-    constructor(board, id, label, color, position, action, nextId) {
+    constructor(board, id, label, color, position, action, nextId, prevId) {
         super();
         this.id = id;
         this.board = board;
@@ -91,28 +92,31 @@ class BoardSquare extends BoardObject {
         this.position = position;
         this.action = action;
         this.nextId = nextId;
+        this.prevId = prevId;
 
         let elem = document.createElement("div");
         elem.id = "sq_".concat(id);
         elem.className = CLASS_BOARD_SQUARE;
         elem.textContent = label;
-        elem.style.cssText = `background-color: ${color}`;
+        elem.style.cssText = `top: ${position.y}px;
+            left: ${position.x}px;
+            background-color: ${color}`;
         
         this.element = elem;
     }
 
     static deserialize(board, id, data) {
-        return new BoardSquare(board, id, data.label, data.color, data.position, data.action, data.nextId);
+        return new BoardSquare(board, id, data.label, data.color, data.position, data.action, data.nextId, data.prevId);
     }
 
     serialize() {
         let data = {
-            id: this.id,
             label: this.label,
             color: this.color,
             position: this.position,
             action: this.action,
             nextId: this.nextId,
+            prevId: this.prevId,
         }
         return data;
     }
@@ -135,9 +139,7 @@ class Player extends BoardObject {
         let elem = document.createElement("div");
         elem.id = "tok_" + name;
         elem.className = CLASS_PLAYER_TOKEN;
-        elem.style.cssText = `top: ${position.y}px;
-            left: ${position.x}px;
-            --color: ${color}`;
+        elem.style.cssText = `--color: ${color}`;
         this.element = elem;
         this.update();
     }
@@ -200,6 +202,10 @@ class Board {
                 data.rules = new RulesData(1, 6); // Add rules to older boards.
                 for (let plr of data.players) {
                     plr.squareId = "0";
+                }
+                for (let sqId in data.squares) {
+                    let a = data.squares[sqId];
+                    a.prevId = ""; // TODO: Make this conversion better.
                 }
                 break;
             default:

@@ -1,5 +1,5 @@
 const EDITOR_URL_BASE = "../editor?board="
-const TEST_BOARD = '';
+const TEST_BOARD = '{"formatVersion":2,"name":"Test1","rules":{"diceMin":1,"diceMax":3},"squareNextId":7,"squares":{"0":{"label":"Start","color":"#00ff00","position":{"x":10,"y":10},"action":{"type":"none","parameters":[""]},"nextId":"2","prevId":""},"1":{"label":"End","color":"#ff0000","position":{"x":405,"y":300},"action":{"type":"endGame","parameters":[""]},"nextId":"","prevId":"5"},"2":{"label":"","color":"#ff80c0","position":{"x":125,"y":17},"action":{"type":"none","parameters":[""]},"nextId":"3","prevId":"0"},"3":{"label":"Go to purple","color":"#ff8040","position":{"x":256,"y":28},"action":{"type":"jumpTo","parameters":["5"]},"nextId":"4","prevId":"2"},"4":{"label":"Go back 2 spaces","color":"#0080ff","position":{"x":376,"y":35},"action":{"type":"goForward","parameters":["-2"]},"nextId":"5","prevId":"3"},"5":{"label":"","color":"#400080","position":{"x":401,"y":161},"action":{"type":"none","parameters":[""]},"nextId":"1","prevId":"4"}},"players":[{"name":"foo","color":"#ff0000","squareId":"0"}]}';
 
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
@@ -16,9 +16,51 @@ function randint(min, max) {
   }
 
 function loadBoard(name) {
-    let success = board.load(name);
+    let success = board.loadJson(TEST_BOARD);
     editLink.href = EDITOR_URL_BASE + board.name;
     return success;
+}
+
+function getPlayerSquare(player) {
+    return board.squares[player.squareId];
+}
+
+function movePlayerTo(player, newSqId) {
+    player.squareId = newSqId;
+    player.update();
+}
+
+function movePlayerBy(player, amount) {
+    let newIdProp = "nextId";
+    if (amount < 0)
+        newIdProp = "prevId";
+    for (let i = 0; i < Math.abs(amount); i++) {
+        let curSq = getPlayerSquare(player);
+        let newSqId = curSq[newIdProp];
+        if (newSqId) {
+            movePlayerTo(player, newSqId);
+        }
+        else
+            break;
+    }
+}
+
+function doSquareAction(player) {
+    let sq = getPlayerSquare(player);
+    let act = sq.action;
+    switch (act.type) {
+        case ActionType.GO_FORWARD:
+            movePlayerBy(player, Number(act.parameters[0]));
+            break;
+        case ActionType.JUMP_TO:
+            movePlayerTo(player, act.parameters[0]);
+            break;
+        case ActionType.END_GAME:
+            setTimeout(() => {
+                window.alert(player.name + " wins!");
+            }, 0); // Temporary kludge so last state is visible.
+            break;
+    }
 }
 
 function onPageLoad(event) {
@@ -39,9 +81,10 @@ function onPageLoad(event) {
 }
 
 function onRollClicked(event) {
-    let roll = randint(1, 7);
+    let roll = randint(board.rules.diceMin, board.rules.diceMax+1);
     rollTxt.textContent = roll.toString();
-    
+    movePlayerBy(board.players[0], roll);
+    doSquareAction(board.players[0]);
 }
 
 window.addEventListener("load", onPageLoad);
