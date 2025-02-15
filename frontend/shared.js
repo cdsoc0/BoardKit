@@ -60,6 +60,7 @@ class Action {
 class BoardObject {
     color = "#000000";
     position = new Vector2(0, 0);
+    board;
     element;
 
     update() {
@@ -81,9 +82,10 @@ class BoardSquare extends BoardObject {
     element;
     nextId;
 
-    constructor(id, label, color, position, action, nextId) {
+    constructor(board, id, label, color, position, action, nextId) {
         super();
         this.id = id;
+        this.board = board;
         this.label = label;
         this.color = color;
         this.position = position;
@@ -94,15 +96,13 @@ class BoardSquare extends BoardObject {
         elem.id = "sq_".concat(id);
         elem.className = CLASS_BOARD_SQUARE;
         elem.textContent = label;
-        elem.style.cssText = `top: ${position.y}px;
-            left: ${position.x}px;
-            background-color: ${color}`;
+        elem.style.cssText = `background-color: ${color}`;
         
         this.element = elem;
     }
 
-    static deserialize(id, data) {
-        return new BoardSquare(id, data.label, data.color, data.position, data.action, data.nextId);
+    static deserialize(board, id, data) {
+        return new BoardSquare(board, id, data.label, data.color, data.position, data.action, data.nextId);
     }
 
     serialize() {
@@ -121,15 +121,16 @@ class BoardSquare extends BoardObject {
 class Player extends BoardObject {
     name = "";
     color = "#000000";
-    position = new Vector2(0, 0);
+    squareId = "";
     score = 0;
     element;
 
-    constructor(name, color, position) {
+    constructor(board, name, color, squareId) {
         super();
+        this.board = board;
         this.name = name;
         this.color = color;
-        this.position = position;
+        this.squareId = squareId;
 
         let elem = document.createElement("div");
         elem.id = "tok_" + name;
@@ -138,19 +139,26 @@ class Player extends BoardObject {
             left: ${position.x}px;
             --color: ${color}`;
         this.element = elem;
+        this.update();
     }
 
-    static deserialize(data) {
-        return new Player(data.name, data.color, data.position);
+    static deserialize(board, data) {
+        return new Player(board, data.name, data.color, data.squareId);
     }
 
     serialize() {
         let data = {
             name: this.name,
             color: this.color,
-            position: this.position,
+            squareId: this.squareId,
         }
         return data;
+    }
+
+    update() {
+        let sq = this.board.squares[this.squareId];
+        this.position = sq.position;
+        super.update();
     }
 }
 
@@ -158,7 +166,7 @@ class Board {
     name = "";
     squares = {};
     squareNextId = 0;
-    players = [new Player("foo", 0, new Vector2(10, 10))];
+    players = [];
     rules = new RulesData(1, 6);
     div;
 
@@ -190,6 +198,9 @@ class Board {
         switch (data.formatVersion) {
             case 1:
                 data.rules = new RulesData(1, 6); // Add rules to older boards.
+                for (let plr of data.players) {
+                    plr.squareId = "0";
+                }
                 break;
             default:
                 throw "unsupportedFormat"; // Error
@@ -221,11 +232,11 @@ class Board {
             // Create the actual objects from the seriziled form.
             for (let sqId in data.squares) {
                 let a = data.squares[sqId];
-                let sq = BoardSquare.deserialize(sqId, a);
+                let sq = BoardSquare.deserialize(this, sqId, a);
                 this.squares[sqId] = sq;
             }
             for (let plr of data.players) {
-                this.players.push(Player.deserialize(plr));
+                this.players.push(Player.deserialize(this, plr));
             }
             this.rebuildLayout(); // Update DOM
             console.log("Loaded board.");

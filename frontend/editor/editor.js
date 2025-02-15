@@ -164,7 +164,7 @@ function onPageLoad(event) {
 
     let params = new URLSearchParams(window.location.search);
     // if (!loadBoard(params.get("board"))) // Load specified board
-    //     newBoard();
+         newBoard();
     
     playLink.href = PLAYER_URL_BASE + board.name;
     appContainer.style = null; // Show GUI
@@ -211,7 +211,7 @@ function onAddSquareDialogClosed(event) {
     else 
         newSqPos = new Vector2(10, 10);
     
-    newSq = new BoardSquare(newSqId, fd.get("sqLabel"), fd.get("sqColor"), newSqPos, newSqAction, "");
+    newSq = new BoardSquare(board, newSqId, fd.get("sqLabel"), fd.get("sqColor"), newSqPos, newSqAction, "");
     board.squares[newSqId] = newSq;
     board.rebuildLayout();
     setupSquareElement(newSq);

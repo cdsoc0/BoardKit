@@ -1,4 +1,5 @@
 const EDITOR_URL_BASE = "../editor?board="
+const TEST_BOARD = '';
 
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
