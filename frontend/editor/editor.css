@@ -1,1 +1,7 @@
-/* TODO: Add editor-specific styles */
+#boardArrows {
+    position: absolute;
+    pointer-events: none;
+    width: 20cm;
+    height: 15cm;
+    z-index: 100;
+}

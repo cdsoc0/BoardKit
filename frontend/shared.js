@@ -45,6 +45,13 @@ function apiExists(object) {
     return typeof object !== "undefined";
 }
 
+function getCenterOfElement(elem) {
+    let rect = elem.getBoundingClientRect();
+    let centerx = rect.left + (rect.width / 2);
+    let centery = rect.top + (rect.height / 2);
+    return new Vector2(centerx, centery);
+}
+
 class Action {
     type;
     parameters = [];
@@ -101,6 +108,7 @@ class BoardSquare extends BoardObject {
         elem.style.cssText = `top: ${position.y}px;
             left: ${position.x}px;
             background-color: ${color}`;
+        elem.setAttribute("data-square-id", id); // For finding Square from element.
         
         this.element = elem;
     }

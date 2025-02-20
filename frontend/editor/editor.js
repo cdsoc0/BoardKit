@@ -4,6 +4,7 @@ const DIALOG_BUTTON_DELETE = "Delete";
 
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
+const boardArrowsSvg = document.getElementById("boardArrows");
 
 const newBtn = document.getElementById("newBtn");
 const loadBtn = document.getElementById("loadBtn");
@@ -16,9 +17,11 @@ const fileOpenDialogForm = document.getElementById("openDialogForm");
 const fileOpenDialogFile = document.getElementById("opdfFile");
 
 const supportErrors = document.querySelectorAll(".supportError");
+
 let board = new Board("Untitled", boardDiv);
 let boardUnsavedChanges = false;
 let editorState;
+let boardArrowsLines = {};
 
 class State {
     eventAbortCon;
@@ -31,7 +34,8 @@ class State {
         this.eventAbortCon.abort(); // Remove all event listeners attached upon entering state.
     }
 
-    // Utility function for derived classes to re
+    // Utility function for derived classes to reuse. Wrapper around the standard event listener that automatically binds 'this'
+    // to the state instance and provides the abort signal implicity.
     attachListener(target, eventName, listener) {
         target.addEventListener(eventName, listener.bind(this), {signal: this.eventAbortCon.signal})
     }
@@ -66,10 +70,13 @@ class EditState extends State {
             square.position.x += event.layerX;
             square.position.y += event.layerY;
             square.update();
+            if (board.squares.hasOwnProperty(square.nextId))
+                makeArrow(square.id, square.nextId);
+            if (board.squares.hasOwnProperty(square.prevId))
+                makeArrow(square.prevId, square.id);
             boardUnsavedChanges = true;
         });
         this.attachListener(elem, "contextmenu", (event) => {
-            console.log(this);
             // Set the form inputs.
             this.#asdfId.value = square.id;
             this.#asdfLabel.value = square.label;
@@ -85,7 +92,6 @@ class EditState extends State {
     }
 
     #onAddSquareButtonClicked(event) {
-        console.log(this);
         this.#asdfId.value = board.squareNextId; // Set the hidden form input
         this.#asdfDeleteBtn.style.display = "none";
         board.squareNextId++;
@@ -93,7 +99,7 @@ class EditState extends State {
     }
     
     #onAddSquareDialogClosed(event) {
-        let fd, btnName, newSq, newSqId, newSqAction, newSqPos;
+        let fd, btnName, newSq, newSqId, newSqAction, newSqPos, newNextId, newPrevId;
         btnName = event.target.returnValue;
     
         fd = new FormData(this.#addSqDialogForm);
@@ -108,12 +114,18 @@ class EditState extends State {
             return;
         
         newSqAction = new Action(fd.get("sqActionType"), fd.get("sqActionParam"));
-        if (board.squares.hasOwnProperty(newSqId)) // Don't reset the position of an already existing square.
+        if (board.squares.hasOwnProperty(newSqId)) { // Don't reset the position of an already existing square.
             newSqPos = board.squares[newSqId].position;
-        else 
+            newNextId = board.squares[newSqId].nextId;
+            newPrevId = board.squares[newSqId].prevId;
+        }
+        else {
             newSqPos = new Vector2(10, 10);
-        
-        newSq = new BoardSquare(board, newSqId, fd.get("sqLabel"), fd.get("sqColor"), newSqPos, newSqAction, "");
+            newNextId = "";
+            newPrevId = "";
+        }
+
+        newSq = new BoardSquare(board, newSqId, fd.get("sqLabel"), fd.get("sqColor"), newSqPos, newSqAction, newNextId, newPrevId);
         board.squares[newSqId] = newSq;
         board.rebuildLayout();
         this.#setupSquareElement(newSq);
@@ -145,8 +157,8 @@ class EditState extends State {
     }
 
     enter() {
-        // Enter the state.
         super.enter();
+        // Setup listeners.
         this.attachListener(this.#editAddSqBtn, "click", this.#onAddSquareButtonClicked);
         this.attachListener(this.#editLinkSqBtn, "click", this.#onLinkSquareButtonClicked);
         this.attachListener(this.#editRulesBtn, "click", this.#onRulesButtonClicked);
@@ -154,8 +166,9 @@ class EditState extends State {
         this.attachListener(this.#addSqDialog, "cancel", onDialogCanceled);
         this.attachListener(this.#rulesDialog, "close", this.#onRulesDialogClosed);
         this.attachListener(this.#rulesDialog,"cancel", onDialogCanceled);
-        this.#editTools.style.display = "block";
-        for (let sqId in board.squares) {
+
+        this.#editTools.style.display = "block"; // Show tools.
+        for (let sqId in board.squares) { // Setup squares.
             console.log(sqId);
             let sq = board.squares[sqId];
             this.#setupSquareElement(sq);
@@ -176,6 +189,51 @@ class EditState extends State {
 class LinkState extends State {
     #linkTools = document.getElementById("linkingTools");
     #linkBackBtn = document.getElementById("linkBackBtn");
+    #draggedSquare;
+
+    #setupSquareElement(square) {
+        let elem = square.element;
+        elem.draggable = true;
+    
+        // Setup event handlers. All of these event handlers are closures so the square object is easily accessable within each.
+        this.attachListener(elem, "dragstart", (event) => {
+            this.#draggedSquare = square;
+        });
+        this.attachListener(elem, "dragover", (event) => {
+            event.preventDefault(); // Make drop events happen properly.
+        });
+        this.attachListener(elem, "drop", (event) => {
+            let toSq, fromSq;
+            if (event.target.className !== CLASS_BOARD_SQUARE)
+                return; // Do nothing if the drop target is not actually a board square.
+            event.preventDefault();
+
+            toSq = this.#getSquareFromElement(event.target);
+            fromSq = this.#draggedSquare;
+
+            fromSq.nextId = toSq.id;
+            toSq.prevId = fromSq.id;
+            makeArrow(fromSq.id, toSq.id);
+        })
+        this.attachListener(elem, "contextmenu", (event) => {
+            let thisSq, otherSq;
+            event.preventDefault();
+            thisSq = this.#getSquareFromElement(event.target);
+            if (thisSq.nextId) {
+                // Clear the relation.
+                otherSq = board.squares[thisSq.nextId];
+                thisSq.nextId = "";
+                otherSq.prevId = "";
+                // Remove the arrow.
+                removeArrow(thisSq.id);
+            }
+        });
+    }
+
+    #getSquareFromElement(elem) {
+        let sqId = elem.dataset.squareId; // Get id of square object that this element represents.
+        return board.squares[sqId];
+    }
 
     #onBackButtonClicked(event) {
         changeState(new EditState());
@@ -185,6 +243,11 @@ class LinkState extends State {
         super.enter();
         this.attachListener(this.#linkBackBtn, "click", this.#onBackButtonClicked);
         this.#linkTools.style.display = "block";
+        for (let sqId in board.squares) { // Setup squares.
+            console.log(sqId);
+            let sq = board.squares[sqId];
+            this.#setupSquareElement(sq);
+        }
     }
 
     exit() {
@@ -224,10 +287,41 @@ function downloadBoardToFile(name, json) {
     boardUnsavedChanges = false;
 }
 
+function makeArrow(fromSqId, toSqId) {
+    if (typeof(boardArrowsLines[fromSqId]) !== "undefined")
+        removeArrow(fromSqId); // Remove old one if present.
+    let arrow = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    let sq1Center = getCenterOfElement(board.squares[fromSqId].element);
+    let sq2Center = getCenterOfElement(board.squares[toSqId].element);
+    arrow.setAttribute("stroke", "black");
+    arrow.style = "marker-end: url(#arrow);"
+    arrow.setAttribute("x1", sq1Center.x);
+    arrow.setAttribute("x2", sq2Center.x);
+    arrow.setAttribute("y1", sq1Center.y);
+    arrow.setAttribute("y2", sq2Center.y);
+    boardArrowsSvg.appendChild(arrow);
+    boardArrowsLines[fromSqId] = arrow;
+}
+
+function removeArrow(fromSqId) {
+    boardArrowsLines[fromSqId].remove();
+    delete boardArrowsLines[fromSqId];
+}
+
 function setupBoard() {
     boardUnsavedChanges = false;
     nameBox.value = board.name;
     playLink.href = PLAYER_URL_BASE + board.name;
+    let boardRect = board.div.getBoundingClientRect();
+    boardArrowsSvg.setAttribute("viewBox", `${boardRect.left} ${boardRect.top} ${boardRect.width} ${boardRect.height}`)
+    for (let arId in boardArrowsLines) { // Clean up old arrows if present.
+        removeArrow(arId);
+    }
+    for (let sqId in board.squares) {
+        let sq = board.squares[sqId];
+        if (board.squares.hasOwnProperty(sq.nextId))
+            makeArrow(sqId, sq.nextId);
+    }
     changeState(new EditState());
 }
 

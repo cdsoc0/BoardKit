@@ -40,14 +40,6 @@
                     </ul>
                 </div>
             </li>
-            <!-- <span id="fileTools" class="form-group"> -->
-
-
-            <!-- <button id="loadBtn" class="btn btn-default">Load</button>
-                <button id="saveBtn" class="btn btn-default">Save</button> -->
-            <!-- </span> -->
-
-            <!-- <li class="active"><a href="#">Edit <span class="sr-only">(current)</span></a></li> -->
             <li><input id="nameBox" class="form-control" type="text" placeholder="Project Name"></li>
             <li><a id="playLink" href="../player">Play</a></li>
         </ul>
@@ -65,12 +57,19 @@
         </div>
 
         <div id="linkingTools" style="display: none;">
-            <button id="linkBackBtn">Back</button>
+            <button id="linkBackBtn">Done</button>
         </div>
 
         <div id="boardContainer">
+            <svg id="boardArrows" viewbox="0 100 775 566" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <marker id="arrow" markerWidth="13" markerHeight="13" refx="2" refy="6" orient="auto">
+                        <path d="M2,2 L2,11 L10,6 L2,2" style="fill:black;" />
+                    </marker>
+                </defs>
+            </svg>
             <div id="board">
-                <!-- Dynamic content inserted here. -->
+                <!-- Dynamic content inserted here. Static content will be overwritten! -->
             </div>
         </div>
         <dialog id="addSqDialog">
