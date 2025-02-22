@@ -17,6 +17,18 @@ class Vector2 {
         this.x = x;
         this.y = y;
     }
+
+    add(other) {
+        return new Vector2(this.x + other.x, this.y + other.y);
+    }
+
+    sub(other) {
+        return new Vector2(this.x - other.x, this.y - other.y);
+    }
+
+    mul(other) {
+        return new Vector2(this.x * other.x, this.y * other.y);
+    }
 }
 
 class RulesData {
@@ -111,7 +123,8 @@ class BoardSquare extends BoardObject {
     }
 
     static deserialize(board, id, data) {
-        return new BoardSquare(board, id, data.label, data.color, data.position, data.action, data.nextId, data.prevId);
+        let newPos = new Vector2(data.position.x, data.position.y);
+        return new BoardSquare(board, id, data.label, data.color, newPos, data.action, data.nextId, data.prevId);
     }
 
     serialize() {
@@ -161,8 +174,14 @@ class Player extends BoardObject {
     }
 
     update() {
+        console.log("update tok");
         let sq = this.board.squares[this.squareId];
-        this.position = sq.position;
+        let sqRect = sq.element.getBoundingClientRect();
+        let tkRect = this.element.getBoundingClientRect();
+        console.log(sqRect);
+        console.log(tkRect);
+        this.position = sq.position.add(new Vector2((sqRect.width / 2) - (tkRect.width / 2), 
+                                        (sqRect.height / 2) - (tkRect.height / 2)));
         super.update();
     }
 }

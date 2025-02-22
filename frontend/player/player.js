@@ -32,17 +32,26 @@ function movePlayerTo(player, newSqId) {
 
 function movePlayerBy(player, amount) {
     let newIdProp = "nextId";
+    let intervalId;
+    let timesLeft = Math.abs(amount);
     if (amount < 0)
         newIdProp = "prevId";
-    for (let i = 0; i < Math.abs(amount); i++) {
+    intervalId = setInterval(() => {
+        if (timesLeft <= 0) {
+            clearInterval(intervalId); // Stop repeating.
+            doSquareAction(player);
+            return;
+        }
+        
         let curSq = getPlayerSquare(player);
         let newSqId = curSq[newIdProp];
         if (newSqId) {
             movePlayerTo(player, newSqId);
         }
         else
-            break;
-    }
+            timesLeft = 0;
+        timesLeft--;
+    }, 500);
 }
 
 function doSquareAction(player) {
@@ -56,9 +65,9 @@ function doSquareAction(player) {
             movePlayerTo(player, act.parameters[0]);
             break;
         case ActionType.END_GAME:
-            setTimeout(() => {
+            //setTimeout(() => {
                 window.alert(player.name + " wins!");
-            }, 0); // Temporary kludge so last state is visible.
+            //}, 0); // Temporary kludge so last state is visible.
             break;
     }
 }
@@ -84,7 +93,6 @@ function onRollClicked(event) {
     let roll = randint(board.rules.diceMin, board.rules.diceMax+1);
     rollTxt.textContent = roll.toString();
     movePlayerBy(board.players[0], roll);
-    doSquareAction(board.players[0]);
 }
 
 window.addEventListener("load", onPageLoad);
