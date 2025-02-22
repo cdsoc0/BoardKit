@@ -58,6 +58,7 @@
 
         <div id="linkingTools" style="display: none;">
             <button id="linkBackBtn">Done</button>
+            Drag source square onto destination square. Right click on source square to remove link.
         </div>
 
         <div id="boardContainer">
@@ -104,8 +105,15 @@
             </form>
         </dialog>
         <dialog id="rulesDialog">
-            <h1>Set global rules</h1>
+            <h1>Set Board Settings</h1>
             <form id="rulesDialogForm" method="dialog">
+                <fieldset>
+                    <legend>Board</legend>
+                    <label for="rdfBoardWidth">Width:</label>
+                    <input id="rdfBoardWidth" name="boardWidth" type="number" value="20" step="0.1" required><br>
+                    <label for="rdfBoardHeight">Height:</label>
+                    <input id="rdfBoardHeight" name="boardHeight" type="number" value="15" step="0.1" required><br>
+                </fieldset>
                 <fieldset>
                     <legend>Dice</legend>
                     <label for="rdfDiceMin">Minimum value:</label>

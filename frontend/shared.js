@@ -1,6 +1,6 @@
 const CLASS_BOARD_SQUARE = "boardSquare";
 const CLASS_PLAYER_TOKEN = "playerToken";
-const BOARD_FORMAT_VERSION = 2;
+const BOARD_FORMAT_VERSION = 3;
 const ActionType = Object.freeze({
     NONE: "none",
     GO_FORWARD: "goForward",
@@ -83,10 +83,7 @@ class BoardObject {
 class BoardSquare extends BoardObject {
     id = 0;
     label = "";
-    color = "#000000";
-    position = new Vector2(0, 0);
-    action = "none";
-    element;
+    action;
     nextId;
     prevId;
 
@@ -132,10 +129,8 @@ class BoardSquare extends BoardObject {
 
 class Player extends BoardObject {
     name = "";
-    color = "#000000";
     squareId = "";
     score = 0;
-    element;
 
     constructor(board, name, color, squareId) {
         super();
@@ -178,11 +173,14 @@ class Board {
     squareNextId = 0;
     players = [];
     rules = new RulesData(1, 6);
+    size = new Vector2(20, 15);
     div;
 
-    constructor(name, div) {
+    constructor(name, div, width, height) {
         this.name = name;
         this.div = div;
+        this.size.x = width;
+        this.size.y = height;
         this.squareNextId = 0;
     }
 
@@ -190,6 +188,7 @@ class Board {
         let data = {};
         data.formatVersion = BOARD_FORMAT_VERSION; // Just in case...
         data.name = this.name;
+        data.size = this.size;
         data.rules = this.rules;
         data.squareNextId = this.squareNextId;
         data.squares = {};
@@ -215,6 +214,9 @@ class Board {
                     let a = data.squares[sqId];
                     a.prevId = ""; // TODO: Make this conversion better.
                 }
+                // Fallthrough
+            case 2:
+                data.size = new Vector2(20, 15);
                 break;
             default:
                 throw "unsupportedFormat"; // Error
@@ -242,6 +244,7 @@ class Board {
             this.clearLayout();
             this.name = data.name;
             this.squareNextId = data.squareNextId;
+            this.size = data.size;
             this.rules = data.rules;
             // Create the actual objects from the seriziled form.
             for (let sqId in data.squares) {
@@ -259,7 +262,12 @@ class Board {
         return false;
     }
 
+    update() {
+        this.div.style = `width: ${this.size.x}cm; height: ${this.size.y}cm;`;
+    }
+
     rebuildLayout() {
+        this.update();
         this.div.replaceChildren();
         for (let sqId in this.squares) {
             let sq = this.squares[sqId];

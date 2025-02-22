@@ -18,7 +18,7 @@ const fileOpenDialogFile = document.getElementById("opdfFile");
 
 const supportErrors = document.querySelectorAll(".supportError");
 
-let board = new Board("Untitled", boardDiv);
+let board = new Board("Untitled", boardDiv, 20, 15);
 let boardUnsavedChanges = false;
 let editorState;
 let boardArrowsLines = {};
@@ -60,6 +60,8 @@ class EditState extends State {
     #rulesDialogForm = document.getElementById("rulesDialogForm");
     #rdfDiceMin = document.getElementById("rdfDiceMin");
     #rdfDiceMax = document.getElementById("rdfDiceMax");
+    #rdfBoardWidth = document.getElementById("rdfBoardWidth");
+    #rdfBoardHeight = document.getElementById("rdfBoardHeight");
 
     #setupSquareElement(square) {
         let elem = square.element;
@@ -136,6 +138,8 @@ class EditState extends State {
         // Show existing values.
         this.#rdfDiceMin.value = board.rules.diceMin;
         this.#rdfDiceMax.value = board.rules.diceMax;
+        this.#rdfBoardWidth.value = board.size.x;
+        this.#rdfBoardHeight.value = board.size.y;
     
         this.#rulesDialog.showModal();
     }
@@ -149,6 +153,7 @@ class EditState extends State {
         fd = new FormData(this.#rulesDialogForm);
         board.rules.diceMin = Number(fd.get("diceMin"));
         board.rules.diceMax = Number(fd.get("diceMax"));
+        resizeBoard(Number(fd.get("boardWidth")), Number(fd.get("boardHeight")));
         boardUnsavedChanges = true;
     }
 
@@ -308,12 +313,21 @@ function removeArrow(fromSqId) {
     delete boardArrowsLines[fromSqId];
 }
 
+function resizeBoard(width, height) {
+    let boardRect;
+    board.size.x = width;
+    board.size.y = height;
+    board.update();
+    boardRect = board.div.getBoundingClientRect();
+    boardArrowsSvg.style = `width: ${board.size.x}cm; height: ${board.size.y}cm;`
+    boardArrowsSvg.setAttribute("viewBox", `${boardRect.left} ${boardRect.top} ${boardRect.width} ${boardRect.height}`)
+}
+
 function setupBoard() {
     boardUnsavedChanges = false;
     nameBox.value = board.name;
     playLink.href = PLAYER_URL_BASE + board.name;
-    let boardRect = board.div.getBoundingClientRect();
-    boardArrowsSvg.setAttribute("viewBox", `${boardRect.left} ${boardRect.top} ${boardRect.width} ${boardRect.height}`)
+    resizeBoard(board.size.x, board.size.y);
     for (let arId in boardArrowsLines) { // Clean up old arrows if present.
         removeArrow(arId);
     }

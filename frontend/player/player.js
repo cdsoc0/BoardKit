@@ -7,7 +7,7 @@ const editLink = document.getElementById("editLink");
 const rollBtn = document.getElementById("rollBtn");
 const rollTxt = document.getElementById("rollTxt");
 const supportErrors = document.querySelectorAll(".supportError");
-let board = new Board("", boardDiv);
+let board = new Board("", boardDiv, 20, 15);
 
 function randint(min, max) {
     min = Math.ceil(min);
