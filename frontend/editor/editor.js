@@ -269,15 +269,22 @@ function newBoard() {
 }
 
 function loadBoard(json) {
-    let success = board.loadJson(json);
+    let success = false;
+    try {
+        data = JSON.parse(json);
+    } catch {
+        console.error("Bad json!");
+    }
+    success = board.deserialize(data);
     if (success) {
         setupBoard();
     }
     return success;
 }
 
-function downloadBoardToFile(name, json) {
+function downloadBoardToFile(name, data) {
     // Awful kludge. Only way I could find to do this cross-browser.
+    let json = JSON.stringify(data);
     let file = new Blob([json], {type: "application/x-boardkit-game"});
     let a = document.createElement("a");
     let url = URL.createObjectURL(file);
@@ -407,7 +414,7 @@ window.addEventListener("load", onPageLoad);
 window.addEventListener("beforeunload", onPageUnload);
 newBtn.addEventListener("click", (ev) => newBoard());
 loadBtn.addEventListener("click", onLoadBtnPressed);
-saveBtn.addEventListener("click", (ev) => downloadBoardToFile(board.name, board.saveJson()));
+saveBtn.addEventListener("click", (ev) => downloadBoardToFile(board.name, board.serialize()));
 nameBox.addEventListener("change", onNameBoxChange)
 fileOpenDialog.addEventListener("close", onFileOpenDialogClosed);
 fileOpenDialog.addEventListener("cancel", onDialogCanceled);

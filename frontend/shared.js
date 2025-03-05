@@ -1,6 +1,7 @@
 const CLASS_BOARD_SQUARE = "boardSquare";
 const CLASS_PLAYER_TOKEN = "playerToken";
 const BOARD_FORMAT_VERSION = 3;
+const API_URL_BASE = "/api/$0/?format=json"
 const ActionType = Object.freeze({
     NONE: "none",
     GO_FORWARD: "goForward",
@@ -41,6 +42,7 @@ class RulesData {
     }
 }
 
+// Various untility functions.
 function colorIntToHex(colorInt) {
     return (colorInt).toString(16).padStart(6, '0');
 }
@@ -62,6 +64,16 @@ function getCenterOfElement(elem) {
     let centerx = rect.left + (rect.width / 2);
     let centery = rect.top + (rect.height / 2);
     return new Vector2(centerx, centery);
+}
+
+function formatString(format, ...args) {
+    // This won't work properly for more than 10 subsitutions, oh well.
+    let ret;
+    for (let i = 0; i < args.length; i++) {
+        ret = format.replaceAll("$" + i.toString(), args[i].toString());
+    }
+    ret = format.replaceAll("$$", "$");
+    return ret;
 }
 
 class Action {
@@ -203,7 +215,7 @@ class Board {
         this.squareNextId = 0;
     }
 
-    saveJson() {
+    serialize() {
         let data = {};
         data.formatVersion = BOARD_FORMAT_VERSION; // Just in case...
         data.name = this.name;
@@ -218,7 +230,7 @@ class Board {
         for (let plr of this.players) {
             data.players.push(plr.serialize());
         }
-        return JSON.stringify(data);
+        return data;
     }
 
     static #convertData(data) {
@@ -244,13 +256,13 @@ class Board {
         return data;
     }
 
-    loadJson(json) {
-        let data;
-        try {
-            data = JSON.parse(json);
-        } catch {
-            return false;
-        }
+    deserialize(data) {
+        // let data;
+        // try {
+        //     data = JSON.parse(data);
+        // } catch {
+        //     return false;
+        // }
         if (data !== null && data !== undefined) {
             if (data.formatVersion < BOARD_FORMAT_VERSION) {
                 try {

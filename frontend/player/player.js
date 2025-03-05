@@ -1,5 +1,5 @@
 const EDITOR_URL_BASE = "../editor?board="
-const TEST_BOARD = '{"formatVersion":2,"name":"Test1","rules":{"diceMin":1,"diceMax":3},"squareNextId":7,"squares":{"0":{"label":"Start","color":"#00ff00","position":{"x":10,"y":10},"action":{"type":"none","parameters":[""]},"nextId":"2","prevId":""},"1":{"label":"End","color":"#ff0000","position":{"x":405,"y":300},"action":{"type":"endGame","parameters":[""]},"nextId":"","prevId":"5"},"2":{"label":"","color":"#ff80c0","position":{"x":125,"y":17},"action":{"type":"none","parameters":[""]},"nextId":"3","prevId":"0"},"3":{"label":"Go to purple","color":"#ff8040","position":{"x":256,"y":28},"action":{"type":"jumpTo","parameters":["5"]},"nextId":"4","prevId":"2"},"4":{"label":"Go back 2 spaces","color":"#0080ff","position":{"x":376,"y":35},"action":{"type":"goForward","parameters":["-2"]},"nextId":"5","prevId":"3"},"5":{"label":"","color":"#400080","position":{"x":401,"y":161},"action":{"type":"none","parameters":[""]},"nextId":"1","prevId":"4"}},"players":[{"name":"foo","color":"#ff0000","squareId":"0"}]}';
+//const TEST_BOARD = '{"formatVersion":2,"name":"Test1","rules":{"diceMin":1,"diceMax":3},"squareNextId":7,"squares":{"0":{"label":"Start","color":"#00ff00","position":{"x":10,"y":10},"action":{"type":"none","parameters":[""]},"nextId":"2","prevId":""},"1":{"label":"End","color":"#ff0000","position":{"x":405,"y":300},"action":{"type":"endGame","parameters":[""]},"nextId":"","prevId":"5"},"2":{"label":"","color":"#ff80c0","position":{"x":125,"y":17},"action":{"type":"none","parameters":[""]},"nextId":"3","prevId":"0"},"3":{"label":"Go to purple","color":"#ff8040","position":{"x":256,"y":28},"action":{"type":"jumpTo","parameters":["5"]},"nextId":"4","prevId":"2"},"4":{"label":"Go back 2 spaces","color":"#0080ff","position":{"x":376,"y":35},"action":{"type":"goForward","parameters":["-2"]},"nextId":"5","prevId":"3"},"5":{"label":"","color":"#400080","position":{"x":401,"y":161},"action":{"type":"none","parameters":[""]},"nextId":"1","prevId":"4"}},"players":[{"name":"foo","color":"#ff0000","squareId":"0"}]}';
 
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
@@ -15,10 +15,23 @@ function randint(min, max) {
     return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
   }
 
-function loadBoard(name) {
-    let success = board.loadJson(TEST_BOARD);
-    editLink.href = EDITOR_URL_BASE + board.name;
-    return success;
+function loadBoard(id) {
+    fetch(formatString(API_URL_BASE, id))
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error(`HTTP error: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then((data) => {
+            let success = board.deserialize(data.board);
+            if (!success)
+                throw new Error("Failed to deserialize board.");
+            editLink.href = EDITOR_URL_BASE + id;
+        })
+        .catch((error) => {
+            window.alert("ERROR: " + error);
+        });
 }
 
 function getPlayerSquare(player) {
