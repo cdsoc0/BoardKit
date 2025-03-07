@@ -269,11 +269,13 @@ function newBoard() {
 }
 
 function loadBoard(json) {
+    let data;
     let success = false;
     try {
         data = JSON.parse(json);
     } catch {
         console.error("Bad json!");
+        return false;
     }
     success = board.deserialize(data);
     if (success) {

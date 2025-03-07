@@ -8,7 +8,12 @@
     </head>
     <body>
         <h1>BoardKit Player Prototype</h1>
-        <p class="supportError">BoardKit requires JavaScript to be enabled and at least Chrome 86, Firefox 78, Safari 14 or equivalent.</p>
+        <noscript>BoardKit requires JavaScript to run, please enable JavaScript in your browser to use BoardKit.</noscript>
+        <div id="loadingPrompts">
+            <h2>BoardKit is now loading</h2>
+            <p id="loadingCurrent">Loading engine...</p>
+        </div>
+        <p class="supportError" style="display: none;">BoardKit requires JavaScript to be enabled and at least Chrome 86, Firefox 78, Safari 14 or equivalent.</p>
         <!-- This is horrid. -->
         <div id="appContainer" style="display: none;">
             <a id="editLink" href="../editor">Edit</a>

@@ -1,3 +1,5 @@
 .venv
-backend/db.sqlite3
+#backend/db.sqlite3
 *.pyc
+# ignore fake api directory made for testing.
+api/

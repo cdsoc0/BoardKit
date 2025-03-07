@@ -6,6 +6,8 @@ const boardDiv = document.getElementById("board");
 const editLink = document.getElementById("editLink");
 const rollBtn = document.getElementById("rollBtn");
 const rollTxt = document.getElementById("rollTxt");
+const loadingPrompts = document.getElementById("loadingPrompts");
+const loadingCurrent = document.getElementById("loadingCurrent");
 const supportErrors = document.querySelectorAll(".supportError");
 let board = new Board("", boardDiv, 20, 15);
 
@@ -16,7 +18,7 @@ function randint(min, max) {
   }
 
 function loadBoard(id) {
-    fetch(formatString(API_URL_BASE, id))
+    return fetch(formatString(API_URL_BASE, "games/" + id))
         .then((response) => {
             if (!response.ok) {
                 throw new Error(`HTTP error: ${response.status}`);
@@ -78,28 +80,35 @@ function doSquareAction(player) {
             movePlayerTo(player, act.parameters[0]);
             break;
         case ActionType.END_GAME:
-            //setTimeout(() => {
-                window.alert(player.name + " wins!");
-            //}, 0); // Temporary kludge so last state is visible.
+            window.alert(player.name + " wins!");
             break;
     }
+}
+
+function hideLoading() {
+    loadingPrompts.style.display = "none";
 }
 
 function onPageLoad(event) {
     if (typeof Element.prototype.replaceChildren === "undefined") {
         console.log("Browser too old!");
+        hideLoading();
+        for (err of supportErrors)
+            err.style.display = "block"; // Show support error.
         return false; // Stop load events.
     }
 
-    for (err of supportErrors) // Remove errors.
-        err.remove();
+    // for (err of supportErrors) // Remove errors.
+    //     err.remove();
 
-    let params = new URLSearchParams(window.location.search);
-    if (!loadBoard(params.get("board"))) // Load specified board
-        window.alert("LOAD ERROR!"); // Placeholder
-    
-    editLink.href = EDITOR_URL_BASE + board.name;
-    appContainer.style = null; // Show GUI
+    setTimeout(async () => {
+        loadingCurrent.textContent = "Loading game...";
+        let params = new URLSearchParams(window.location.search);
+        await loadBoard(params.get("board")); // Load specified board
+        editLink.href = EDITOR_URL_BASE + board.name;
+        appContainer.style = null; // Show GUI
+        hideLoading();
+    }, 0);
 }
 
 function onRollClicked(event) {

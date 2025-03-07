@@ -72,7 +72,7 @@ function formatString(format, ...args) {
     for (let i = 0; i < args.length; i++) {
         ret = format.replaceAll("$" + i.toString(), args[i].toString());
     }
-    ret = format.replaceAll("$$", "$");
+    ret = ret.replaceAll("$$", "$");
     return ret;
 }
 
