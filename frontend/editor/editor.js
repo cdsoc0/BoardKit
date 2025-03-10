@@ -268,16 +268,19 @@ function newBoard() {
     console.log("Created new board.");
 }
 
-function loadBoard(json) {
+function loadBoardJson(json) {
     let data;
-    let success = false;
     try {
         data = JSON.parse(json);
     } catch {
         console.error("Bad json!");
         return false;
     }
-    success = board.deserialize(data);
+    return loadBoard(data);
+}
+
+function loadBoard(data) {
+    let success = board.deserialize(data);
     if (success) {
         setupBoard();
     }
@@ -372,10 +375,23 @@ function onPageLoad(event) {
         err.remove();
 
     let params = new URLSearchParams(window.location.search);
-    // if (!loadBoard(params.get("board"))) // Load specified board
+    let onlineBoardId = params.get("onlineboard");
+    if (onlineBoardId !== null) {
+        fetchOnlineBoard(onlineBoardId)
+            .then((data) => {
+                let success = loadBoard(data.board);
+                if (!success)
+                    throw new Error("Failed to deserialize board.");
+                playLink.style = null;
+                playLink.href = PLAYER_URL_BASE + onlineBoardId;
+            })
+            .catch((error) => {
+                window.alert(error);
+            })
+    }
+    else
          newBoard();
     
-    playLink.href = PLAYER_URL_BASE + board.name;
     appContainer.style = null; // Show GUI
 }
 
@@ -403,7 +419,7 @@ function onFileOpenDialogClosed(event) {
     reader = new FileReader();
     // Read file.
     reader.addEventListener("loadend", (e) => {
-        loadBoard(reader.result);
+        loadBoardJson(reader.result);
     });
     reader.readAsText(file); // Async
 }
