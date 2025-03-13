@@ -17,6 +17,8 @@ const fileOpenDialogForm = document.getElementById("openDialogForm");
 const fileOpenDialogFile = document.getElementById("opdfFile");
 
 const supportErrors = document.querySelectorAll(".supportError");
+const loadingPrompts = document.getElementById("loadingPrompts");
+const loadingCurrent = document.getElementById("loadingCurrent");
 
 let board = new Board("Untitled", boardDiv, 20, 15);
 let boardUnsavedChanges = false;
@@ -361,18 +363,29 @@ function changeState(newState) {
     editorState = newState;
 }
 
+function hideLoading() {
+    // Show GUI
+    loadingPrompts.style.display = "none";
+    appContainer.style = null;
+}
+
+function showSupportError() {
+    hideLoading();
+    for (err of supportErrors)
+        err.style.display = "block"; // Show support error.
+}
+
 function onPageLoad(event) {
     if (!apiExists(Element.prototype.replaceChildren)) {
         console.log("replaceChildren not supported!");
+        showSupportError();
         return false; // Stop load events.
     }
     else if (!apiExists(HTMLDialogElement)) {
         console.log("<dialog> not supported!");
+        showSupportError();
         return false;
     }
-
-    for (err of supportErrors) // Remove errors.
-        err.remove();
 
     let params = new URLSearchParams(window.location.search);
     let onlineBoardId = params.get("onlineboard");
@@ -384,15 +397,16 @@ function onPageLoad(event) {
                     throw new Error("Failed to deserialize board.");
                 playLink.style = null;
                 playLink.href = PLAYER_URL_BASE + onlineBoardId;
+                hideLoading();
             })
             .catch((error) => {
                 window.alert(error);
             })
     }
-    else
-         newBoard();
-    
-    appContainer.style = null; // Show GUI
+    else {
+        newBoard();
+        hideLoading();
+    }
 }
 
 function onPageUnload(event) {
