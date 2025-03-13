@@ -91,8 +91,8 @@ function onPageLoad(event) {
         return false; // Stop load events.
     }
 
-    // for (err of supportErrors) // Remove errors.
-    //     err.remove();
+    let params = new URLSearchParams(window.location.search);
+    let boardJson = params.get("boardjson");
 
     setTimeout(async () => {
         loadingCurrent.textContent = "Loading game...";

@@ -19,8 +19,9 @@ html, body {
 }
 
 .boardSquare {
+    --color: grey;
     position: absolute;
-    background-color: grey;
+    background-color: var(--color);
     outline-color: black;
     outline-style: solid;
     outline-width: thin;

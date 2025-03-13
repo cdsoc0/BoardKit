@@ -35,10 +35,33 @@ class Vector2 {
 class RulesData {
     diceMin = 1;
     diceMax = 6;
+    playersMin = 1;
+    playersMax = 4;
 
-    constructor(diceMin, diceMax) {
+    constructor(diceMin, diceMax, playersMin, playersMax) {
         this.diceMin = diceMin;
         this.diceMax = diceMax;
+        this.playersMin = playersMin;
+        this.playersMax = playersMax;
+    }
+
+    static deserialize(data) {
+        let dicemin = 1;
+        let dicemax = 6;
+        let minplr = 1;
+        let maxplr = 4;
+
+        // Set defaults for missing rules.
+        if (data.hasOwnProperty("diceMin"))
+            dicemin = data.diceMin;
+        if (data.hasOwnProperty("diceMax"))
+            dicemax = data.diceMax;
+        if (data.hasOwnProperty("playersMin"))
+            minplr = data.playersMin;
+        if (data.hasOwnProperty("playersMax"))
+            maxplr = data.playersMax;
+
+        return new RulesData(dicemin, dicemax, minplr, maxplr);
     }
 }
 
@@ -94,6 +117,10 @@ class Action {
         this.type = type;
         this.parameters = parameters;
     }
+
+    static deserialize(data) {
+        return new Action(data.type, ...data.parameters)
+    }
 }
 
 class BoardObject {
@@ -105,6 +132,7 @@ class BoardObject {
     update() {
         this.element.style.left = this.position.x + "px";
         this.element.style.top = this.position.y + "px";
+        this.element.style.setProperty("--color", this.color);
     }
 
     destroy() {
@@ -136,7 +164,7 @@ class BoardSquare extends BoardObject {
         elem.textContent = label;
         elem.style.cssText = `top: ${position.y}px;
             left: ${position.x}px;
-            background-color: ${color}`;
+            --color: ${color}`;
         elem.setAttribute("data-square-id", id); // For finding Square from element.
         
         this.element = elem;
@@ -144,7 +172,8 @@ class BoardSquare extends BoardObject {
 
     static deserialize(board, id, data) {
         let newPos = new Vector2(data.position.x, data.position.y);
-        return new BoardSquare(board, id, data.label, data.color, newPos, data.action, data.nextId, data.prevId);
+        let newAction = Action.deserialize(data.action);
+        return new BoardSquare(board, id, data.label, data.color, newPos, newAction, data.nextId, data.prevId);
     }
 
     serialize() {
@@ -157,6 +186,19 @@ class BoardSquare extends BoardObject {
             prevId: this.prevId,
         }
         return data;
+    }
+
+    update() {
+        super.update();
+    }
+
+    update(label, color, action) {
+        if (arguments.length > 0) {
+            this.label = label;
+            this.color = color;
+            this.action = action;
+        }
+        super.update();
     }
 }
 
@@ -198,8 +240,6 @@ class Player extends BoardObject {
         let sq = this.board.squares[this.squareId];
         let sqRect = sq.element.getBoundingClientRect();
         let tkRect = this.element.getBoundingClientRect();
-        console.log(sqRect);
-        console.log(tkRect);
         this.position = sq.position.add(new Vector2((sqRect.width / 2) - (tkRect.width / 2), 
                                         (sqRect.height / 2) - (tkRect.height / 2)));
         super.update();
@@ -265,12 +305,6 @@ class Board {
     }
 
     deserialize(data) {
-        // let data;
-        // try {
-        //     data = JSON.parse(data);
-        // } catch {
-        //     return false;
-        // }
         if (data !== null && data !== undefined) {
             if (data.formatVersion < BOARD_FORMAT_VERSION) {
                 try {
@@ -280,11 +314,11 @@ class Board {
                 }
             }
 
-            this.clearLayout();
+            this.clearLayout(); 
             this.name = data.name;
             this.squareNextId = data.squareNextId;
             this.size = data.size;
-            this.rules = data.rules;
+            this.rules = RulesData.deserialize(data.rules);
             // Create the actual objects from the seriziled form.
             for (let sqId in data.squares) {
                 let a = data.squares[sqId];
@@ -301,12 +335,12 @@ class Board {
         return false;
     }
 
-    update() {
+    updateSize() {
         this.div.style = `width: ${this.size.x}cm; height: ${this.size.y}cm;`;
     }
 
     rebuildLayout() {
-        this.update();
+        this.updateSize();
         this.div.replaceChildren();
         for (let sqId in this.squares) {
             let sq = this.squares[sqId];
@@ -319,6 +353,7 @@ class Board {
     }
 
     clearLayout() {
+        // Clean away old board objects.
         for (let sqId in this.squares) {
             let sq = this.squares[sqId];
             sq.destroy();

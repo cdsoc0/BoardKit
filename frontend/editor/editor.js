@@ -103,13 +103,17 @@ class EditState extends State {
     }
     
     #onAddSquareDialogClosed(event) {
-        let fd, btnName, newSq, newSqId, newSqAction, newSqPos, newNextId, newPrevId;
+        let fd, btnName, newSq, newSqId, newSqLabel, newSqColor, newSqAction, newSqPos, newNextId, newPrevId;
         btnName = event.target.returnValue;
     
         fd = new FormData(this.#addSqDialogForm);
         newSqId = fd.get("sqId");
         if (btnName === DIALOG_BUTTON_DELETE) { // Delete square if button for it pressed.
-            delete board.squares[newSqId];
+            let thisSq = board.squares[newSqId];
+            // TODO: This mess could possibly be avoided with a refactor.
+            removeSquareLinks(thisSq); // Clean up links.
+            thisSq.destroy(); // Destruct.
+            delete board.squares[newSqId]; // Remove from board collection.
             board.rebuildLayout();
             boardUnsavedChanges = true;
             return;
@@ -117,22 +121,22 @@ class EditState extends State {
         else if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
             return;
         
+        newSqLabel = fd.get("sqLabel");
+        newSqColor = fd.get("sqColor");
         newSqAction = new Action(fd.get("sqActionType"), fd.get("sqActionParam"));
-        if (board.squares.hasOwnProperty(newSqId)) { // Don't reset the position of an already existing square.
-            newSqPos = board.squares[newSqId].position;
-            newNextId = board.squares[newSqId].nextId;
-            newPrevId = board.squares[newSqId].prevId;
+        if (board.squares.hasOwnProperty(newSqId)) { // Don't recreate an already existing square.
+            newSq = board.squares[newSqId];
+            newSq.update(newSqLabel, newSqColor, newSqAction);
         }
         else {
             newSqPos = new Vector2(10, 10);
             newNextId = "";
             newPrevId = "";
+            newSq = new BoardSquare(board, newSqId, newSqLabel, newSqColor, newSqPos, newSqAction, newNextId, newPrevId);
+            board.squares[newSqId] = newSq;
+            board.rebuildLayout();
+            this.#setupSquareElement(newSq);
         }
-
-        newSq = new BoardSquare(board, newSqId, fd.get("sqLabel"), fd.get("sqColor"), newSqPos, newSqAction, newNextId, newPrevId);
-        board.squares[newSqId] = newSq;
-        board.rebuildLayout();
-        this.#setupSquareElement(newSq);
         boardUnsavedChanges = true;
     }
 
@@ -327,11 +331,26 @@ function removeArrow(fromSqId) {
     delete boardArrowsLines[fromSqId];
 }
 
+function removeSquareLinks(thisSq) {
+    if (thisSq.nextId) {
+        // Clear the relation.
+        let nextSq = board.squares[thisSq.nextId];
+        nextSq.prevId = "";
+        // Remove the arrow.
+        removeArrow(thisSq.id);
+    }
+    if (thisSq.prevId) {
+        let prevSq = board.squares[thisSq.prevId];
+        prevSq.nextId = "";
+        removeArrow(prevSq.id);
+    }
+}
+
 function resizeBoard(width, height) {
     let boardRect;
     board.size.x = width;
     board.size.y = height;
-    board.update();
+    board.updateSize();
     boardRect = board.div.getBoundingClientRect();
     boardArrowsSvg.style = `width: ${board.size.x}cm; height: ${board.size.y}cm;`
     boardArrowsSvg.setAttribute("viewBox", `${boardRect.left} ${boardRect.top} ${boardRect.width} ${boardRect.height}`)
