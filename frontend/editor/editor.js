@@ -1,4 +1,4 @@
-const PLAYER_URL_BASE = "../player?board=";
+const PLAYER_URL_BASE = "../player?game=";
 const DIALOG_BUTTON_OK = "OK";
 const DIALOG_BUTTON_DELETE = "Delete";
 
@@ -64,6 +64,8 @@ class EditState extends State {
     #rdfDiceMax = document.getElementById("rdfDiceMax");
     #rdfBoardWidth = document.getElementById("rdfBoardWidth");
     #rdfBoardHeight = document.getElementById("rdfBoardHeight");
+    #rdfPlayerMin = document.getElementById("rdfPlayerMin");
+    #rdfPlayerMax = document.getElementById("rdfPlayerMax");
 
     #setupSquareElement(square) {
         let elem = square.element;
@@ -149,18 +151,50 @@ class EditState extends State {
     
         this.#rulesDialog.showModal();
     }
-    
-    #onRulesDialogClosed(event) {
+
+    #validateMinMax(minElement, maxElement) {
+        let min = Number(minElement.value);
+        let max = Number(maxElement.value);
+        if (min > max) {
+            minElement.setCustomValidity("Minimum must not exceed maximum.");
+            return false;
+        }
+        minElement.setCustomValidity("");
+        return true;
+    }
+
+    #onRulesDialogSubmitted(event) {
         let btnName, fd;
-        btnName = event.target.returnValue;
+        btnName = event.submitter.value;
         if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
-            return;
+            return true; // Always close unless changes are confirmed.
         
-        fd = new FormData(this.#rulesDialogForm);
-        board.rules.diceMin = Number(fd.get("diceMin"));
-        board.rules.diceMax = Number(fd.get("diceMax"));
+        console.log("New rules.");
+        fd = new FormData(event.target);
+        if (this.#validateMinMax(this.#rdfDiceMin, this.#rdfDiceMax)) {
+            board.rules.diceMin = Number(fd.get("diceMin"));
+            board.rules.diceMax = Number(fd.get("diceMax"));
+        }
+        else {
+            event.preventDefault(); // Stop closing dialog.
+            return false;
+        }
+        
+        if (this.#validateMinMax(this.#rdfPlayerMin, this.#rdfPlayerMax)) {
+            board.rules.playersMin = Number(fd.get("playersMin"));
+            board.rules.playersMin = Number(fd.get("playersMax"));
+        }
+        else {
+            event.preventDefault(); // Stop closing dialog.
+            return false;
+        }
+
         resizeBoard(Number(fd.get("boardWidth")), Number(fd.get("boardHeight")));
         boardUnsavedChanges = true;
+    }
+    
+    #onRulesDialogClosed(event) {
+        
     }
 
     #onLinkSquareButtonClicked(event) {
@@ -175,6 +209,7 @@ class EditState extends State {
         this.attachListener(this.#editRulesBtn, "click", this.#onRulesButtonClicked);
         this.attachListener(this.#addSqDialog, "close", this.#onAddSquareDialogClosed);
         this.attachListener(this.#addSqDialog, "cancel", onDialogCanceled);
+        this.attachListener(this.#rulesDialogForm, "submit", this.#onRulesDialogSubmitted)
         this.attachListener(this.#rulesDialog, "close", this.#onRulesDialogClosed);
         this.attachListener(this.#rulesDialog,"cancel", onDialogCanceled);
 
@@ -407,15 +442,15 @@ function onPageLoad(event) {
     }
 
     let params = new URLSearchParams(window.location.search);
-    let onlineBoardId = params.get("onlineboard");
-    if (onlineBoardId !== null) {
-        fetchOnlineBoard(onlineBoardId)
+    let onlineGameId = params.get("game");
+    if (onlineGameId !== null) {
+        fetchOnlineGame(onlineGameId)
             .then((data) => {
                 let success = loadBoard(data.board);
                 if (!success)
                     throw new Error("Failed to deserialize board.");
                 playLink.style = null;
-                playLink.href = PLAYER_URL_BASE + onlineBoardId;
+                playLink.href = PLAYER_URL_BASE + onlineGameId;
                 hideLoading();
             })
             .catch((error) => {

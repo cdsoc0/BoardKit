@@ -112,9 +112,9 @@
                 <fieldset>
                     <legend>Board</legend>
                     <label for="rdfBoardWidth">Width:</label>
-                    <input id="rdfBoardWidth" name="boardWidth" type="number" value="20" step="0.1" required><br>
+                    <input id="rdfBoardWidth" name="boardWidth" type="number" min="0.1" value="20" step="0.1" required><br>
                     <label for="rdfBoardHeight">Height:</label>
-                    <input id="rdfBoardHeight" name="boardHeight" type="number" value="15" step="0.1" required><br>
+                    <input id="rdfBoardHeight" name="boardHeight" type="number" min="0.1" value="15" step="0.1" required><br>
                 </fieldset>
                 <fieldset>
                     <legend>Dice</legend>
@@ -122,6 +122,13 @@
                     <input id="rdfDiceMin" name="diceMin" type="number" value="1" required><br>
                     <label for="rdfDiceMax">Maximum value:</label>
                     <input id="rdfDiceMax" name="diceMax" type="number" value="6" required>
+                </fieldset>
+                <fieldset>
+                    <legend>Players</legend>
+                    <label for="rdfPlayerMin">Minimum players:</label>
+                    <input id="rdfPlayerMin" name="playersMin" type="number" min="1" value="1" required><br>
+                    <label for="rdfPlayerMax">Maximum players:</label>
+                    <input id="rdfPlayerMax" name="playersMax" type="number" min="1" value="4" required>
                 </fieldset>
                 <input type="submit" value="OK">
                 <input type="submit" value="Cancel" formnovalidate>

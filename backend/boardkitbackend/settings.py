@@ -123,3 +123,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Debug stuff
+if DEBUG:
+    INSTALLED_APPS.append("corsheaders")
+    MIDDLEWARE.insert(2, 'corsheaders.middleware.CorsMiddleware')
+    CORS_ALLOW_ALL_ORIGINS = True

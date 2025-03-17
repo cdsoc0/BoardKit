@@ -1,4 +1,4 @@
-const EDITOR_URL_BASE = "../editor?onlineboard="
+const EDITOR_URL_BASE = "../editor?game="
 
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
@@ -16,8 +16,8 @@ function randint(min, max) {
     return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
   }
 
-function loadBoard(id) {
-    return fetchOnlineBoard(id)
+function loadGame(id) {
+    return fetchOnlineGame(id)
         .then((data) => {
             let success = board.deserialize(data.board);
             if (!success)
@@ -91,14 +91,11 @@ function onPageLoad(event) {
         return false; // Stop load events.
     }
 
-    let params = new URLSearchParams(window.location.search);
-    let boardJson = params.get("boardjson");
-
     setTimeout(async () => {
         loadingCurrent.textContent = "Loading game...";
         let params = new URLSearchParams(window.location.search);
-        let boardId = params.get("board");
-        await loadBoard(boardId); // Load specified board
+        let gameId = params.get("game");
+        await loadGame(gameId); // Load specified board
         editLink.href = EDITOR_URL_BASE + boardId;
         appContainer.style = null; // Show GUI
         hideLoading();

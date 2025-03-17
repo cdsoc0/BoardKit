@@ -1,7 +1,7 @@
 const CLASS_BOARD_SQUARE = "boardSquare";
 const CLASS_PLAYER_TOKEN = "playerToken";
 const BOARD_FORMAT_VERSION = 3;
-const API_URL_BASE = "/api/$0?format=json"
+const API_URL_BASE = "https://shiny-space-trout-g477r5rr9gj4hv7rg-8000.app.github.dev/api/$0?format=json"
 const ActionType = Object.freeze({
     NONE: "none",
     GO_FORWARD: "goForward",
@@ -99,8 +99,8 @@ function formatString(format, ...args) {
     return ret;
 }
 
-async function fetchOnlineBoard(boardId) {
-    let response = await fetch(formatString(API_URL_BASE, "games/" + boardId));
+async function fetchOnlineGame(gameId) {
+    let response = await fetch(formatString(API_URL_BASE, "games/" + gameId));
     if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);
     }
