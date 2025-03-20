@@ -154,26 +154,11 @@ class EditState extends State {
         this.#rulesDialog.showModal();
     }
 
-    #validateMinMax(minElement, maxElement) {
-        let min = Number(minElement.value);
-        let max = Number(maxElement.value);
-        if (min > max) {
-            minElement.setCustomValidity("Minimum must not exceed maximum.");
-            return false;
-        }
-        minElement.setCustomValidity("");
-        return true;
-    }
-
     #getMaxChangedListener(minElement) {
         return function(event) {
             let maxElement = event.target;
             minElement.max = maxElement.value;
         }
-    }
-
-    #onRulesDialogSubmitted(event) {
-
     }
     
     #onRulesDialogClosed(event) {
@@ -205,7 +190,6 @@ class EditState extends State {
         this.attachListener(this.#editRulesBtn, "click", this.#onRulesButtonClicked);
         this.attachListener(this.#addSqDialog, "close", this.#onAddSquareDialogClosed);
         this.attachListener(this.#addSqDialog, "cancel", onDialogCanceled);
-        //this.attachListener(this.#rulesDialogForm, "submit", this.#onRulesDialogSubmitted);
         this.attachListener(this.#rdfDiceMax, "change", this.#getMaxChangedListener(this.#rdfDiceMin));
         this.attachListener(this.#rdfPlayerMax, "change", this.#getMaxChangedListener(this.#rdfPlayerMin));
         this.attachListener(this.#rulesDialog, "close", this.#onRulesDialogClosed);
@@ -441,7 +425,7 @@ function onPageLoad(event) {
 
     let params = new URLSearchParams(window.location.search);
     let onlineGameId = params.get("game");
-    if (onlineGameId !== null) {
+    if (onlineGameId !== null) { // If a game is specified in the URL, try to load it.
         fetchOnlineGame(onlineGameId)
             .then((data) => {
                 let success = loadBoard(data.board);
