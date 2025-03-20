@@ -144,10 +144,12 @@ class EditState extends State {
 
     #onRulesButtonClicked(event) {
         // Show existing values.
-        this.#rdfDiceMin.value = board.rules.diceMin;
-        this.#rdfDiceMax.value = board.rules.diceMax;
         this.#rdfBoardWidth.value = board.size.x;
         this.#rdfBoardHeight.value = board.size.y;
+        this.#rdfDiceMax.value = board.rules.diceMax;
+        this.#rdfDiceMin.value = board.rules.diceMin;
+        this.#rdfPlayerMax.value = board.rules.playersMax;
+        this.#rdfPlayerMin.value = board.rules.playersMin;
     
         this.#rulesDialog.showModal();
     }
@@ -163,38 +165,32 @@ class EditState extends State {
         return true;
     }
 
-    #onRulesDialogSubmitted(event) {
-        let btnName, fd;
-        btnName = event.submitter.value;
-        if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
-            return true; // Always close unless changes are confirmed.
-        
-        console.log("New rules.");
-        fd = new FormData(event.target);
-        if (this.#validateMinMax(this.#rdfDiceMin, this.#rdfDiceMax)) {
-            board.rules.diceMin = Number(fd.get("diceMin"));
-            board.rules.diceMax = Number(fd.get("diceMax"));
+    #getMaxChangedListener(minElement) {
+        return function(event) {
+            let maxElement = event.target;
+            minElement.max = maxElement.value;
         }
-        else {
-            event.preventDefault(); // Stop closing dialog.
-            return false;
-        }
-        
-        if (this.#validateMinMax(this.#rdfPlayerMin, this.#rdfPlayerMax)) {
-            board.rules.playersMin = Number(fd.get("playersMin"));
-            board.rules.playersMin = Number(fd.get("playersMax"));
-        }
-        else {
-            event.preventDefault(); // Stop closing dialog.
-            return false;
-        }
+    }
 
-        resizeBoard(Number(fd.get("boardWidth")), Number(fd.get("boardHeight")));
-        boardUnsavedChanges = true;
+    #onRulesDialogSubmitted(event) {
+
     }
     
     #onRulesDialogClosed(event) {
+        let btnName, fd;
+        btnName = event.target.returnValue;
+        if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
+            return;
         
+        console.log("New rules.");
+        fd = new FormData(this.#rulesDialogForm);
+
+        board.rules.diceMin = Number(fd.get("diceMin"));;
+        board.rules.diceMax = Number(fd.get("diceMax"));
+        board.rules.playersMin =  Number(fd.get("playersMin"));
+        board.rules.playersMax = Number(fd.get("playersMax"));
+        resizeBoard(Number(fd.get("boardWidth")), Number(fd.get("boardHeight")));
+        boardUnsavedChanges = true;
     }
 
     #onLinkSquareButtonClicked(event) {
@@ -209,7 +205,9 @@ class EditState extends State {
         this.attachListener(this.#editRulesBtn, "click", this.#onRulesButtonClicked);
         this.attachListener(this.#addSqDialog, "close", this.#onAddSquareDialogClosed);
         this.attachListener(this.#addSqDialog, "cancel", onDialogCanceled);
-        this.attachListener(this.#rulesDialogForm, "submit", this.#onRulesDialogSubmitted)
+        //this.attachListener(this.#rulesDialogForm, "submit", this.#onRulesDialogSubmitted);
+        this.attachListener(this.#rdfDiceMax, "change", this.#getMaxChangedListener(this.#rdfDiceMin));
+        this.attachListener(this.#rdfPlayerMax, "change", this.#getMaxChangedListener(this.#rdfPlayerMin));
         this.attachListener(this.#rulesDialog, "close", this.#onRulesDialogClosed);
         this.attachListener(this.#rulesDialog,"cancel", onDialogCanceled);
 
@@ -303,7 +301,7 @@ class LinkState extends State {
 }
 
 function newBoard() {
-    board = new Board("Untitled", boardDiv);
+    board = new Board("Untitled", boardDiv, 20, 15);
     board.rebuildLayout();
     setupBoard();
     console.log("Created new board.");

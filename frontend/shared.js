@@ -1,3 +1,4 @@
+// Code shared between player and editor.
 const CLASS_BOARD_SQUARE = "boardSquare";
 const CLASS_PLAYER_TOKEN = "playerToken";
 const BOARD_FORMAT_VERSION = 3;
@@ -29,39 +30,6 @@ class Vector2 {
 
     mul(other) {
         return new Vector2(this.x * other.x, this.y * other.y);
-    }
-}
-
-class RulesData {
-    diceMin = 1;
-    diceMax = 6;
-    playersMin = 1;
-    playersMax = 4;
-
-    constructor(diceMin, diceMax, playersMin, playersMax) {
-        this.diceMin = diceMin;
-        this.diceMax = diceMax;
-        this.playersMin = playersMin;
-        this.playersMax = playersMax;
-    }
-
-    static deserialize(data) {
-        let dicemin = 1;
-        let dicemax = 6;
-        let minplr = 1;
-        let maxplr = 4;
-
-        // Set defaults for missing rules.
-        if (data.hasOwnProperty("diceMin"))
-            dicemin = data.diceMin;
-        if (data.hasOwnProperty("diceMax"))
-            dicemax = data.diceMax;
-        if (data.hasOwnProperty("playersMin"))
-            minplr = data.playersMin;
-        if (data.hasOwnProperty("playersMax"))
-            maxplr = data.playersMax;
-
-        return new RulesData(dicemin, dicemax, minplr, maxplr);
     }
 }
 
@@ -105,6 +73,40 @@ async function fetchOnlineGame(gameId) {
         throw new Error(`HTTP error: ${response.status}`);
     }
     return response.json();
+}
+
+// Application-specific data structures.
+class RulesData {
+    diceMin = 1;
+    diceMax = 6;
+    playersMin = 1;
+    playersMax = 4;
+
+    constructor(diceMin, diceMax, playersMin, playersMax) {
+        this.diceMin = diceMin;
+        this.diceMax = diceMax;
+        this.playersMin = playersMin;
+        this.playersMax = playersMax;
+    }
+
+    static deserialize(data) {
+        let dicemin = 1;
+        let dicemax = 6;
+        let minplr = 1;
+        let maxplr = 4;
+
+        // Replace defaults if rule exists.
+        if (data.hasOwnProperty("diceMin"))
+            dicemin = data.diceMin;
+        if (data.hasOwnProperty("diceMax"))
+            dicemax = data.diceMax;
+        if (data.hasOwnProperty("playersMin"))
+            minplr = data.playersMin;
+        if (data.hasOwnProperty("playersMax"))
+            maxplr = data.playersMax;
+
+        return new RulesData(dicemin, dicemax, minplr, maxplr);
+    }
 }
 
 class Action {
@@ -188,10 +190,6 @@ class BoardSquare extends BoardObject {
         return data;
     }
 
-    update() {
-        super.update();
-    }
-
     update(label, color, action) {
         if (arguments.length > 0) {
             this.label = label;
@@ -251,7 +249,7 @@ class Board {
     squares = {};
     squareNextId = 0;
     players = [];
-    rules = new RulesData(1, 6);
+    rules = new RulesData(1, 6, 1, 4);
     size = new Vector2(20, 15);
     div;
 
