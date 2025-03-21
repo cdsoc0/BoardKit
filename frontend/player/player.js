@@ -96,7 +96,7 @@ function onPageLoad(event) {
         let params = new URLSearchParams(window.location.search);
         let gameId = params.get("game");
         await loadGame(gameId); // Load specified board
-        editLink.href = EDITOR_URL_BASE + boardId;
+        editLink.href = EDITOR_URL_BASE + gameId;
         appContainer.style = null; // Show GUI
         hideLoading();
     }, 0);

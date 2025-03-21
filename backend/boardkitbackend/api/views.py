@@ -3,7 +3,8 @@ from django.contrib.auth.models import Group, User
 from rest_framework import permissions, viewsets
 
 from .models import Profile, Category, Game
-from boardkitbackend.api.serializers import UserSerializer, ProfileSerializer, GameSerializer
+from .permissions import IsCreatorOrReadOnlyIfPublic, IsOwnProfileOrReadOnlyIfPublic
+from boardkitbackend.api.serializers import UserSerializer, ProfileSerializer, GameSerializer, CategorySerializer
 
 # Create your views here.
 class UserViewSet(viewsets.ModelViewSet):
@@ -12,7 +13,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.DjangoModelPermissionsOrAnonReadOnly]
 
 class ProfileViewSet(viewsets.ModelViewSet):
     """
@@ -20,12 +21,24 @@ class ProfileViewSet(viewsets.ModelViewSet):
     """
     queryset = Profile.objects.all().order_by('id')
     serializer_class = ProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsOwnProfileOrReadOnlyIfPublic]
+    http_method_names = ["get", "head", "put", "options"]
 
 class GameViewSet(viewsets.ModelViewSet):
     """
-    API endpoint that allows profiles to be viewed or edited.
+    API endpoint that allows games to be viewed or edited.
     """
     queryset = Game.objects.all().order_by('creation_date')
     serializer_class = GameSerializer
-    permission_classes = []
+    permission_classes = [IsCreatorOrReadOnlyIfPublic]
+
+    def perform_create(self, serializer):
+        serializer.save(creator=self.request.user)
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows querying categories.
+    """
+    queryset = Category.objects.all().order_by('id')
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.DjangoModelPermissionsOrAnonReadOnly]

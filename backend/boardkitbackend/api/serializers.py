@@ -10,9 +10,16 @@ class UserSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ["id", "user", "bio"]
+        fields = ["id", "bio", "public"]
 
 class GameSerializer(serializers.ModelSerializer):
+    creator_id = serializers.ReadOnlyField(source='creator.id')
     class Meta:
         model = Game
         fields = ["id", "creator_id", "name", "description", "creation_date", "modification_date", "published", "board", "categories"]
+
+class CategorySerializer(serializers.ModelSerializer):
+    games = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    class Meta:
+        model = Category
+        fields = ["id", "name", "games"]
