@@ -21,7 +21,7 @@ class Game(models.Model):
     modification_date = models.DateTimeField()
     published = models.BooleanField(default=False)
     board = models.JSONField()
-    categories = models.ManyToManyField(Category, blank=True)
+    categories = models.ManyToManyField(Category, blank=True, related_name="games_in_category")
 
 @receiver(post_save, sender=User)
 def create_profile_on_make_account(sender, instance, created, **kwargs):

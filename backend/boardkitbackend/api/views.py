@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.models import Group, User
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, viewsets, exceptions
 
 from .models import Profile, Category, Game
 from .permissions import IsCreatorOrReadOnlyIfPublic, IsOwnProfileOrReadOnlyIfPublic
@@ -23,6 +23,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
     permission_classes = [IsOwnProfileOrReadOnlyIfPublic]
     http_method_names = ["get", "head", "put", "options"]
+
+    def list(self, request):
+        raise exceptions.PermissionDenied("You may not list all profiles.")
 
 class GameViewSet(viewsets.ModelViewSet):
     """

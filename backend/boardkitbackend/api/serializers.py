@@ -19,7 +19,7 @@ class GameSerializer(serializers.ModelSerializer):
         fields = ["id", "creator_id", "name", "description", "creation_date", "modification_date", "published", "board", "categories"]
 
 class CategorySerializer(serializers.ModelSerializer):
-    games = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    games = serializers.PrimaryKeyRelatedField(many=True, read_only=True, source="games_in_category")
     class Meta:
         model = Category
         fields = ["id", "name", "games"]
