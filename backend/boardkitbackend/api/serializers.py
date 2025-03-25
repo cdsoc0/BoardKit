@@ -8,9 +8,12 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'date_joined', 'is_staff']
 
 class ProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+    date_joined = serializers.DateTimeField(source="user.date_joined", read_only=True)
+    is_staff = serializers.BooleanField(source="user.is_staff", read_only=True)
     class Meta:
         model = Profile
-        fields = ["id", "bio", "public"]
+        fields = ["id", "username", "bio", "date_joined", "is_staff", "public"]
 
 class GameSerializer(serializers.ModelSerializer):
     creator_id = serializers.ReadOnlyField(source='creator.id')

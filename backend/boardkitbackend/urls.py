@@ -21,8 +21,8 @@ from rest_framework import routers
 from boardkitbackend.api import views
 
 router = routers.DefaultRouter()
-router.register(r'users', views.UserViewSet)
-router.register(r'profiles', views.ProfileViewSet)
+#router.register(r'users', views.UserViewSet)
+router.register(r'users', views.ProfileViewSet)
 router.register(r'games', views.GameViewSet)
 router.register(r'categories', views.CategoryViewSet)
 

@@ -17,7 +17,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class ProfileViewSet(viewsets.ModelViewSet):
     """
-    API endpoint that allows profiles to be viewed or edited.
+    API endpoint that allows user profiles to be viewed or edited.
     """
     queryset = Profile.objects.all().order_by('id')
     serializer_class = ProfileSerializer
@@ -25,7 +25,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "head", "put", "options"]
 
     def list(self, request):
-        raise exceptions.PermissionDenied("You may not list all profiles.")
+        raise exceptions.PermissionDenied("You may not list all users.")
 
 class GameViewSet(viewsets.ModelViewSet):
     """
