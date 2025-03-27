@@ -20,6 +20,14 @@ class GameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
         fields = ["id", "creator_id", "name", "description", "creation_date", "modification_date", "published", "board", "categories"]
+    
+    def get_fields(self, *args, **kwargs):
+        # Exclude board from multi-object listings.
+        fields = super().get_fields(*args, **kwargs)
+        request = self.context.get('request')
+        if request is not None and not request.parser_context.get('kwargs') and request.method == "GET":
+            fields.pop('board', None)
+        return fields
 
 class CategorySerializer(serializers.ModelSerializer):
     games = serializers.PrimaryKeyRelatedField(many=True, read_only=True, source="games_in_category")

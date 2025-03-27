@@ -4,6 +4,7 @@ from rest_framework import permissions, viewsets, exceptions
 
 from .models import Profile, Category, Game
 from .permissions import IsCreatorOrReadOnlyIfPublic, IsOwnProfileOrReadOnlyIfPublic
+from .pageination import LargeObjectsPageination
 from boardkitbackend.api.serializers import UserSerializer, ProfileSerializer, GameSerializer, CategorySerializer
 
 # Create your views here.
@@ -31,8 +32,9 @@ class GameViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows games to be viewed or edited.
     """
-    queryset = Game.objects.all().order_by('creation_date')
+    queryset = Game.objects.all().order_by('-creation_date')
     serializer_class = GameSerializer
+    pagination_class = LargeObjectsPageination
     permission_classes = [IsCreatorOrReadOnlyIfPublic]
 
     def perform_create(self, serializer):

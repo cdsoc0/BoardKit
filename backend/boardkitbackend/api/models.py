@@ -17,8 +17,8 @@ class Game(models.Model):
                                                                 # deleted.
     name = models.CharField(max_length=50)
     description = models.CharField(max_length=500)
-    creation_date = models.DateTimeField()
-    modification_date = models.DateTimeField()
+    creation_date = models.DateTimeField(auto_now_add=True, editable=False)
+    modification_date = models.DateTimeField(auto_now=True)
     published = models.BooleanField(default=False)
     board = models.JSONField()
     categories = models.ManyToManyField(Category, blank=True, related_name="games_in_category")
