@@ -63,6 +63,11 @@
             Drag source square onto destination square. Right click on source square to remove link.
         </div>
 
+        <div id="selectTargetTools" style="display: none;">
+            <button id="selectTargetDoneBtn">Done</button>
+            Select the target square then press the 'Done' button.
+        </div>
+
         <div id="boardContainer">
             <svg id="boardArrows" viewbox="0 100 775 566" xmlns="http://www.w3.org/2000/svg">
                 <defs>
@@ -92,9 +97,10 @@
                     <option value="endGame">Game ends</option>
                 </select><br>
                 <label for="asdfActionParam">Landing Action Parameter: </label>
-                <input id="asdfActionParam" name="sqActionParam"><br>
-                <input type="submit" name="dlBtn" value="OK">
-                <input type="submit" name="dlBtn" value="Cancel" formnovalidate>
+                <input id="asdfActionParam" type="number" name="sqActionParam" minlength="1">
+                <input id="asdfActionSetTargetBtn" type="submit" name="dlBtn" value="Set target" style="display: none;" formnovalidate><br>
+                <input type="submit" name="dlBtn" value="OK">&nbsp;
+                <input type="submit" name="dlBtn" value="Cancel" formnovalidate>&nbsp;
                 <input id="asdfDeleteBtn" type="submit" name="dlBtn" value="Delete" formnovalidate>
             </form>
         </dialog>
@@ -130,7 +136,7 @@
                     <label for="rdfPlayerMax">Max:</label>
                     <input id="rdfPlayerMax" name="playersMax" type="number" min="1" max="8" value="4" required>
                 </fieldset>
-                <input type="submit" value="OK">
+                <input type="submit" value="OK">&nbsp;
                 <input type="submit" value="Cancel" formnovalidate>
             </form>
         </dialog>

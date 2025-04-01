@@ -1,6 +1,7 @@
 const PLAYER_URL_BASE = "../player?game=";
 const DIALOG_BUTTON_OK = "OK";
 const DIALOG_BUTTON_DELETE = "Delete";
+const DIALOG_BUTTON_SET_TARGET = "Set target";
 
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
@@ -56,6 +57,7 @@ class EditState extends State {
     #asdfColor = document.getElementById("asdfColor");
     #asdfActionType = document.getElementById("asdfActionType");
     #asdfActionParam = document.getElementById("asdfActionParam");
+    #asdfActionSetTargetBtn = document.getElementById("asdfActionSetTargetBtn");
     #asdfDeleteBtn = document.getElementById("asdfDeleteBtn");
 
     #rulesDialog = document.getElementById("rulesDialog");
@@ -83,6 +85,7 @@ class EditState extends State {
             boardUnsavedChanges = true;
         });
         this.attachListener(elem, "contextmenu", (event) => {
+            event.preventDefault();
             // Set the form inputs.
             this.#asdfId.value = square.id;
             this.#asdfLabel.value = square.label;
@@ -90,8 +93,11 @@ class EditState extends State {
             this.#asdfActionType.value = square.action.type;
             if (square.action.parameters.length > 0)
                 this.#asdfActionParam.value = square.action.parameters[0];
+            // Cause a 'change' event.
+            const chngEvt = new Event("change");
+            this.#asdfActionType.dispatchEvent(chngEvt);
             // Show the 'delete' button.
-            this.#asdfDeleteBtn.style.display = "inline";
+            showElement(this.#asdfDeleteBtn);
             // Reshow the add dialog.
             this.#addSqDialog.showModal();
         });
@@ -99,9 +105,28 @@ class EditState extends State {
 
     #onAddSquareButtonClicked(event) {
         this.#asdfId.value = board.squareNextId; // Set the hidden form input
-        this.#asdfDeleteBtn.style.display = "none";
+        hideElement(this.#asdfDeleteBtn);
         board.squareNextId++;
         this.#addSqDialog.showModal();
+    }
+
+    #onASDFActionTypeChanged(event) {
+        let newType = event.target.value;
+        switch (newType) {
+            case ActionType.JUMP_TO:
+                this.#asdfActionParam.type = "text";
+                hideElement(this.#asdfActionParam);
+                showElement(this.#asdfActionSetTargetBtn);
+                break;
+            case ActionType.GO_FORWARD:
+                this.#asdfActionParam.type = "number";
+                hideElement(this.#asdfActionSetTargetBtn);
+                showElement(this.#asdfActionParam);
+                break;
+            default:
+                this.#asdfActionParam.type = "hidden";
+                hideElement(this.#asdfActionSetTargetBtn);
+        }
     }
     
     #onAddSquareDialogClosed(event) {
@@ -118,6 +143,10 @@ class EditState extends State {
             delete board.squares[newSqId]; // Remove from board collection.
             board.rebuildLayout();
             boardUnsavedChanges = true;
+            return;
+        }
+        else if (btnName === DIALOG_BUTTON_SET_TARGET) {
+            changeState(new SelectTargetState(event.target, this.#asdfActionParam, this));
             return;
         }
         else if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
@@ -189,13 +218,14 @@ class EditState extends State {
         this.attachListener(this.#editLinkSqBtn, "click", this.#onLinkSquareButtonClicked);
         this.attachListener(this.#editRulesBtn, "click", this.#onRulesButtonClicked);
         this.attachListener(this.#addSqDialog, "close", this.#onAddSquareDialogClosed);
+        this.attachListener(this.#asdfActionType, "change", this.#onASDFActionTypeChanged)
         this.attachListener(this.#addSqDialog, "cancel", onDialogCanceled);
         this.attachListener(this.#rdfDiceMax, "change", this.#getMaxChangedListener(this.#rdfDiceMin));
         this.attachListener(this.#rdfPlayerMax, "change", this.#getMaxChangedListener(this.#rdfPlayerMin));
         this.attachListener(this.#rulesDialog, "close", this.#onRulesDialogClosed);
         this.attachListener(this.#rulesDialog,"cancel", onDialogCanceled);
 
-        this.#editTools.style.display = "block"; // Show tools.
+        showElement(this.#editTools); // Show tools.
         for (let sqId in board.squares) { // Setup squares.
             console.log(sqId);
             let sq = board.squares[sqId];
@@ -205,11 +235,69 @@ class EditState extends State {
 
     exit() {
         // Cleanup the state.
-        editTools.style.display = "none";
+        hideElement(editTools);
         for (let sqId in board.squares) {
             let e = board.squares[sqId].element;
             e.draggable = false;
         }
+        super.exit();
+    }
+}
+
+class SelectTargetState extends State {
+    #selectTargetTools = document.getElementById("selectTargetTools");
+    #selectTargetDoneBtn = document.getElementById("selectTargetDoneBtn");
+    #triggeringDialog;
+    #inputBox;
+    #prevState;
+    #selectedElem;
+
+    constructor(triggeringDialog, inputBox, prevState) {
+        super();
+        this.#triggeringDialog = triggeringDialog;
+        this.#inputBox = inputBox;
+        this.#prevState = prevState;
+    }
+
+    #setupSquares() {
+        let selSq = board.squares[this.#inputBox.value];
+        // Show old selection, if present.
+        if (typeof selSq !== "undefined") {
+            selSq.element.classList.add("selectedSquare");
+            this.#selectedElem = selSq.element;
+        }
+        // Setup squares.
+        for (let sqId in board.squares) {
+            console.log(sqId);
+            let square = board.squares[sqId];
+            let elem = square.element;
+            this.attachListener(elem, "click", (event) => {
+                if (this.#selectedElem !== undefined && this.#selectedElem !== elem)
+                    this.#selectedElem.classList.remove("selectedSquare");
+                this.#inputBox.value = square.id;
+                this.#selectedElem = elem;
+                elem.classList.add("selectedSquare");
+            });
+        }
+    }
+
+    #onDoneButtonClicked(event) {
+        changeState(this.#prevState);
+    }
+
+    enter() {
+        super.enter();
+        this.attachListener(this.#selectTargetDoneBtn, "click", this.#onDoneButtonClicked);
+        showElement(this.#selectTargetTools);
+        this.#setupSquares();
+    }
+
+    exit() {
+        hideElement(this.#selectTargetTools);
+        if (this.#selectedElem !== undefined)
+            this.#selectedElem.classList.remove("selectedSquare");
+        if (this.#triggeringDialog !== undefined)
+            this.#triggeringDialog.showModal();
         super.exit();
     }
 }
@@ -239,9 +327,11 @@ class LinkState extends State {
             toSq = this.#getSquareFromElement(event.target);
             fromSq = this.#draggedSquare;
 
-            fromSq.nextId = toSq.id;
-            toSq.prevId = fromSq.id;
-            makeArrow(fromSq.id, toSq.id);
+            if (toSq !== fromSq) {
+                fromSq.nextId = toSq.id;
+                toSq.prevId = fromSq.id;
+                makeArrow(fromSq.id, toSq.id);
+            }
         })
         this.attachListener(elem, "contextmenu", (event) => {
             let thisSq, otherSq;
@@ -270,7 +360,7 @@ class LinkState extends State {
     enter() {
         super.enter();
         this.attachListener(this.#linkBackBtn, "click", this.#onBackButtonClicked);
-        this.#linkTools.style.display = "block";
+        showElement(this.#linkTools);
         for (let sqId in board.squares) { // Setup squares.
             console.log(sqId);
             let sq = board.squares[sqId];
@@ -279,7 +369,7 @@ class LinkState extends State {
     }
 
     exit() {
-        this.#linkTools.style.display = "none";
+        hideElement(this.#linkTools);
         super.exit();
     }
 }
@@ -401,14 +491,14 @@ function changeState(newState) {
 
 function hideLoading() {
     // Show GUI
-    loadingPrompts.style.display = "none";
-    appContainer.style = null;
+    hideElement(loadingPrompts);
+    showElement(appContainer);
 }
 
 function showSupportError() {
     hideLoading();
     for (err of supportErrors)
-        err.style.display = "block"; // Show support error.
+        showElement(err); // Show support error.
 }
 
 function onPageLoad(event) {

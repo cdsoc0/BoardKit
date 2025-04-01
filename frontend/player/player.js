@@ -44,9 +44,11 @@ function movePlayerBy(player, amount) {
     let timesLeft = Math.abs(amount);
     if (amount < 0)
         newIdProp = "prevId";
+    rollBtn.setAttribute("disabled", true);
     intervalId = setInterval(() => {
         if (timesLeft <= 0) {
             clearInterval(intervalId); // Stop repeating.
+            rollBtn.removeAttribute("disabled"); // Re-enable dice rolls.
             doSquareAction(player);
             return;
         }
@@ -79,7 +81,7 @@ function doSquareAction(player) {
 }
 
 function hideLoading() {
-    loadingPrompts.style.display = "none";
+    hideElement(loadingPrompts);
 }
 
 function onPageLoad(event) {
@@ -87,7 +89,7 @@ function onPageLoad(event) {
         console.log("Browser too old!");
         hideLoading();
         for (err of supportErrors)
-            err.style.display = "block"; // Show support error.
+            showElement(err); // Show support error.
         return false; // Stop load events.
     }
 

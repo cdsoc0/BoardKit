@@ -57,6 +57,14 @@ function getCenterOfElement(elem) {
     return new Vector2(centerx, centery);
 }
 
+function showElement(elem) {
+    elem.style.display = "revert";
+}
+
+function hideElement(elem) {
+    elem.style.display = "none";
+}
+
 function formatString(format, ...args) {
     // This won't work properly for more than 10 subsitutions, oh well.
     let ret;
