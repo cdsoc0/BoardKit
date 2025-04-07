@@ -1,28 +1,11 @@
-<!DOCTYPE html>
-<html lang="en-GB">
-
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>BoardKit Prototype</title>
-    <!-- Bootstrap -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css"
-        integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://code.jquery.com/jquery-1.12.4.min.js"
-        integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ"
-        crossorigin="anonymous"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"
-        integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
-        crossorigin="anonymous"></script>
-    <!-- Custom -->
-    <link rel="stylesheet" href="../base.css">
-    <link rel="stylesheet" href="editor.css">
-</head>
-
-<body>
+{% extends 'shared/global_base.html' %}
+{% load static %}
+{% block title %}BoardKit Player{% endblock %}
+{% block head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static '/frontend/editor/style.css' %}">
+{% endblock %}
+{% block body %}
     <noscript>BoardKit requires JavaScript to run, please enable JavaScript in your browser to use BoardKit.</noscript>
     <div id="loadingPrompts">
         <h2>BoardKit is now loading</h2>
@@ -112,6 +95,26 @@
                 <input type="submit" value="Cancel" formnovalidate>
             </form>
         </dialog>
+        <dialog id="saveAsDialog">
+            <h1>Save Project</h1>
+            <form id="saveAsDialogForm" method="dialog">
+                <label for="sadfName">Name:</label>
+                <input id="sadfName" type="text" name="name" minlength="3" maxlength="50" required><br>
+                <label for="sadfDesc">Description:</label>
+                <textarea id="sadfDesc" name="desc" rows="10" cols="50" maxlength="500" placeholder="Describe your game here..." required></textarea><br>
+                <label for="sadfCategories">Categories (hold ctrl/cmd for multiselect):</label>
+                <select id="sadfCategories" name="categories" multiple>
+                    <!-- Dynamic -->
+                     <option value="1">Family</option>
+                     <option value="2">Race</option>
+                     <option value="3">Christmas</option>
+                </select><br>
+                <label for="sadfPublish">Publish?</label>
+                <input id="sadfPublish" name="publish" type="checkbox" value="1"><br>
+                <input type="submit" value="OK">
+                <input type="submit" value="Cancel" formnovalidate>
+            </form>
+        </dialog>
         <dialog id="rulesDialog">
             <h1>Set Board Settings</h1>
             <form id="rulesDialogForm" method="dialog">
@@ -142,8 +145,6 @@
         </dialog>
     </div>
 
-    <script src="../shared.js"></script>
-    <script src="editor.js"></script>
-</body>
-
-</html>
+    <script src="{% static '/frontend/shared.js' %}"></script>
+    <script src="{% static '/frontend/editor/editor.js' %}"></script>
+{% endblock %}

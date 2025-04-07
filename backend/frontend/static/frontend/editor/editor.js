@@ -17,6 +17,10 @@ const fileOpenDialog = document.getElementById("openDialog");
 const fileOpenDialogForm = document.getElementById("openDialogForm");
 const fileOpenDialogFile = document.getElementById("opdfFile");
 
+const fileSaveDialog = document.getElementById("saveAsDialog");
+const fileSaveDialogForm = document.getElementById("saveAsDialogForm");
+const sadfCategories = document.getElementById("sadfCategories");
+
 const supportErrors = document.querySelectorAll(".supportError");
 const loadingPrompts = document.getElementById("loadingPrompts");
 const loadingCurrent = document.getElementById("loadingCurrent");
@@ -25,8 +29,10 @@ let board = new Board("Untitled", boardDiv, 20, 15);
 let boardUnsavedChanges = false;
 let editorState;
 let boardArrowsLines = {};
+let gameId = 0;
 
-class State {
+// Base class for a UI state. Derived classes encapsulate state-specific behaviour and variables.
+class UIState {
     eventAbortCon;
 
     enter() {
@@ -44,7 +50,8 @@ class State {
     }
 }
 
-class EditState extends State {
+// General editing state: Allows adding, removing and moving squares and assigning rulesets.
+class EditState extends UIState {
     #editTools = document.getElementById("editTools");
     #editAddSqBtn = document.getElementById("editAddSqBtn");
     #editLinkSqBtn = document.getElementById("editLinkSqBtn");
@@ -114,17 +121,17 @@ class EditState extends State {
         let newType = event.target.value;
         switch (newType) {
             case ActionType.JUMP_TO:
-                this.#asdfActionParam.type = "text";
-                hideElement(this.#asdfActionParam);
-                showElement(this.#asdfActionSetTargetBtn);
+                this.#asdfActionParam.type = "text"; // Square IDs are strings and we want them to be validated as such.
+                hideElement(this.#asdfActionParam); // Don't allow the user to enter an ID directly as we don't expose them in the UI.
+                showElement(this.#asdfActionSetTargetBtn); // Show a button for entering a graphical selection instead.
                 break;
             case ActionType.GO_FORWARD:
-                this.#asdfActionParam.type = "number";
+                this.#asdfActionParam.type = "number"; // We want a number for this.
                 hideElement(this.#asdfActionSetTargetBtn);
                 showElement(this.#asdfActionParam);
                 break;
             default:
-                this.#asdfActionParam.type = "hidden";
+                this.#asdfActionParam.type = "hidden"; // The other action types take no parameters.
                 hideElement(this.#asdfActionSetTargetBtn);
         }
     }
@@ -149,9 +156,10 @@ class EditState extends State {
             changeState(new SelectTargetState(event.target, this.#asdfActionParam, this));
             return;
         }
-        else if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
+        else if (btnName !== DIALOG_BUTTON_OK) // Only handle the rest of the form data when user presses 'ok' button
             return;
         
+        // Handle form data.
         newSqLabel = fd.get("sqLabel");
         newSqColor = fd.get("sqColor");
         newSqAction = new Action(fd.get("sqActionType"), fd.get("sqActionParam"));
@@ -183,6 +191,7 @@ class EditState extends State {
         this.#rulesDialog.showModal();
     }
 
+    // We have multiple pairs of input boxes that define minimums and maximums so this function returns a closure to avoid duplicating the event listener code.
     #getMaxChangedListener(minElement) {
         return function(event) {
             let maxElement = event.target;
@@ -244,7 +253,7 @@ class EditState extends State {
     }
 }
 
-class SelectTargetState extends State {
+class SelectTargetState extends UIState {
     #selectTargetTools = document.getElementById("selectTargetTools");
     #selectTargetDoneBtn = document.getElementById("selectTargetDoneBtn");
     #triggeringDialog;
@@ -302,7 +311,7 @@ class SelectTargetState extends State {
     }
 }
 
-class LinkState extends State {
+class LinkState extends UIState {
     #linkTools = document.getElementById("linkingTools");
     #linkBackBtn = document.getElementById("linkBackBtn");
     #draggedSquare;
@@ -501,6 +510,25 @@ function showSupportError() {
         showElement(err); // Show support error.
 }
 
+async function createOnlineGame(name, description, categories, publish, board) {
+    let bodyObj = {
+        name: name,
+        description: description,
+        published: publish,
+        categories: categories,
+        board: board,
+    }
+    let response = await apiPost("games", bodyObj);
+    if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+    }
+    return response.json();
+}
+
+async function saveOnlineGame(gameId, board) {
+    
+}
+
 function onPageLoad(event) {
     if (!apiExists(Element.prototype.replaceChildren)) {
         console.log("replaceChildren not supported!");
@@ -548,6 +576,17 @@ function onLoadBtnPressed(event) {
     fileOpenDialog.showModal();
 }
 
+function onSaveBtnPressed(event) {
+    //downloadBoardToFile(board.name, board.serialize())
+    if (gameId > 0) {
+        // TODO
+        window.alert("Not implemented yet!");
+    }
+    else {
+        fileSaveDialog.showModal();
+    }
+}
+
 function onFileOpenDialogClosed(event) {
     let btnName, fd, file, reader;
     btnName = event.target.returnValue;
@@ -564,6 +603,28 @@ function onFileOpenDialogClosed(event) {
     reader.readAsText(file); // Async
 }
 
+function onFileSaveDialogClosed(event) {
+    let btnName, fd, name, desc, categories, publish, serializedBoard;
+    btnName = event.target.returnValue;
+    if (btnName !== DIALOG_BUTTON_OK)
+        return;
+
+    fd = new FormData(fileSaveDialogForm);
+    name = fd.get("name");
+    desc = fd.get("desc");
+    categories = fd.getAll("categories");
+    publish = Boolean(fd.get("publish"));
+    serializedBoard = board.serialize();
+
+    createOnlineGame(name, desc, categories, publish, serializedBoard).then((data) => {
+        gameId = data.id;
+        board.name = data.name;
+    })
+    .catch((error) => {
+        window.alert(error);
+    });
+}
+
 function onDialogCanceled(event) {
     event.target.returnValue = "esc"; // Act like the cancel button was pressed upon Escape being pressed.
 }
@@ -572,7 +633,9 @@ window.addEventListener("load", onPageLoad);
 window.addEventListener("beforeunload", onPageUnload);
 newBtn.addEventListener("click", (ev) => newBoard());
 loadBtn.addEventListener("click", onLoadBtnPressed);
-saveBtn.addEventListener("click", (ev) => downloadBoardToFile(board.name, board.serialize()));
+saveBtn.addEventListener("click", onSaveBtnPressed);
 nameBox.addEventListener("change", onNameBoxChange)
 fileOpenDialog.addEventListener("close", onFileOpenDialogClosed);
 fileOpenDialog.addEventListener("cancel", onDialogCanceled);
+fileSaveDialog.addEventListener("close", onFileSaveDialogClosed);
+fileSaveDialog.addEventListener("cancel", onDialogCanceled);

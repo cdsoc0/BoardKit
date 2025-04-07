@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'boardkitbackend.api'
+    'boardkitbackend.api',
+    'frontend.apps.FrontendConfig',
 ]
 
 MIDDLEWARE = [
@@ -56,7 +58,7 @@ ROOT_URLCONF = 'boardkitbackend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [(os.path.join(BASE_DIR, 'templates')),],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -135,4 +137,6 @@ REST_FRAMEWORK = {
 if DEBUG:
     INSTALLED_APPS.append("corsheaders")
     MIDDLEWARE.insert(2, 'corsheaders.middleware.CorsMiddleware')
-    CORS_ALLOW_ALL_ORIGINS = True
+    #CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = ["https://shiny-space-trout-g477r5rr9gj4hv7rg-8001.app.github.dev", "http://localhost:8001"]
+    CORS_ALLOW_CREDENTIALS = True

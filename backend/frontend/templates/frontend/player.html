@@ -1,0 +1,29 @@
+{% extends 'shared/global_base.html' %}
+{% load static %}
+{% block title %}BoardKit Player{% endblock %}
+{% block head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static '/frontend/player/style.css' %}">
+{% endblock %}
+{% block body %}
+        <h1>BoardKit Player Prototype</h1>
+        <noscript>BoardKit requires JavaScript to run, please enable JavaScript in your browser to use BoardKit.</noscript>
+        <div id="loadingPrompts">
+            <h2>BoardKit is now loading</h2>
+            <p id="loadingCurrent">Loading engine...</p>
+        </div>
+        <p class="supportError" style="display: none;">BoardKit requires at least Chrome 86, Firefox 78, Safari 14 or equivalent.</p>
+        <!-- This is horrid. -->
+        <div id="appContainer" style="display: none;">
+            <a id="editLink" class="" href="../editor">Edit</a>
+            <div id="boardContainer">
+                <div id="board">
+                <!-- Dynamic content inserted here. -->
+                </div>
+            </div>
+            <button id="rollBtn">Roll</button>
+            <p id="rollTxt"></p>
+        </div>
+        <script src="{% static '/frontend/shared.js' %}"></script>
+        <script src="{% static '/frontend/player/player.js' %}"></script>
+{% endblock %}

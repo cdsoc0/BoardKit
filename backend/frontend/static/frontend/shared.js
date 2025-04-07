@@ -2,7 +2,7 @@
 const CLASS_BOARD_SQUARE = "boardSquare";
 const CLASS_PLAYER_TOKEN = "playerToken";
 const BOARD_FORMAT_VERSION = 3;
-const API_URL_BASE = "https://shiny-space-trout-g477r5rr9gj4hv7rg-8000.app.github.dev/api/$0?format=json"
+const API_URL_BASE = "/api/$0/?format=json";
 const ActionType = Object.freeze({
     NONE: "none",
     GO_FORWARD: "goForward",
@@ -75,8 +75,46 @@ function formatString(format, ...args) {
     return ret;
 }
 
+function getCookiesAsObj() {
+    // WHY is document.cookie a string???
+    // This doesn't handle url-encoding but I can't be bothered right now.
+    let obj = {};
+    let pairs = document.cookie.split("; ");
+    for (let pairStr of pairs) {
+        let pairArr = pairStr.split("=");
+        let key = pairArr[0];
+        let val = pairArr[1];
+        obj[key] = val;
+    }
+    return obj;
+}
+
+function getCsrfToken() {
+    let cookie = document.cookie;
+    let startIdx = cookie.indexOf("csrftoken");
+    let endIdx = cookie.indexOf("; ", startIdx);
+    let kvPair = cookie.substring(startIdx, endIdx).split("=");
+    return kvPair[1];
+}
+
+async function apiGet(endpoint) {
+    return fetch(formatString(API_URL_BASE, endpoint));
+}
+
+async function apiPost(endpoint, body) {
+    return fetch(formatString(API_URL_BASE, endpoint), {
+        method: "POST",
+        body: JSON.stringify(body),
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+            'X-CSRFToken': getCsrfToken(),
+        }
+    });
+}
+
 async function fetchOnlineGame(gameId) {
-    let response = await fetch(formatString(API_URL_BASE, "games/" + gameId));
+    let response = await apiGet("games/" + gameId);
     if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);
     }
@@ -84,6 +122,7 @@ async function fetchOnlineGame(gameId) {
 }
 
 // Application-specific data structures.
+// Composed with Board to store the ruleset.
 class RulesData {
     diceMin = 1;
     diceMax = 6;
@@ -117,6 +156,7 @@ class RulesData {
     }
 }
 
+// Composed with BoardSquare to represent an action to be performed upon a player landing a square.
 class Action {
     type;
     parameters = [];
@@ -133,11 +173,12 @@ class Action {
     }
 }
 
+// Base class for objects that appear upon the board.
 class BoardObject {
     color = "#000000";
     position = new Vector2(0, 0);
-    board;
-    element;
+    board; // The board this object is associated with.
+    element; // The div that represents this object visually.
 
     update() {
         this.element.style.left = this.position.x + "px";
@@ -150,6 +191,7 @@ class BoardObject {
     }
 }
 
+// Represents a square on the board.
 class BoardSquare extends BoardObject {
     id = 0;
     label = "";
@@ -208,6 +250,7 @@ class BoardSquare extends BoardObject {
     }
 }
 
+// Represents a player and their token.
 class Player extends BoardObject {
     name = "";
     squareId = "";
@@ -252,6 +295,7 @@ class Player extends BoardObject {
     }
 }
 
+// Represents a particular board game and contains most game varibles.
 class Board {
     name = "";
     squares = {};
