@@ -1,7 +1,7 @@
 // Code shared between player and editor.
 const CLASS_BOARD_SQUARE = "boardSquare";
 const CLASS_PLAYER_TOKEN = "playerToken";
-const BOARD_FORMAT_VERSION = 3;
+const GAME_FORMAT_VERSION = 4;
 const API_URL_BASE = "/api/$0/?format=json";
 const ActionType = Object.freeze({
     NONE: "none",
@@ -75,6 +75,10 @@ function formatString(format, ...args) {
     return ret;
 }
 
+function errorAlert(error) {
+    window.alert(error + "\n\n" + error.stack);
+}
+
 function getCookiesAsObj() {
     // WHY is document.cookie a string???
     // This doesn't handle url-encoding but I can't be bothered right now.
@@ -93,6 +97,8 @@ function getCsrfToken() {
     let cookie = document.cookie;
     let startIdx = cookie.indexOf("csrftoken");
     let endIdx = cookie.indexOf("; ", startIdx);
+    if (endIdx < 0)
+        endIdx = cookie.length;
     let kvPair = cookie.substring(startIdx, endIdx).split("=");
     return kvPair[1];
 }
@@ -104,6 +110,18 @@ async function apiGet(endpoint) {
 async function apiPost(endpoint, body) {
     return fetch(formatString(API_URL_BASE, endpoint), {
         method: "POST",
+        body: JSON.stringify(body),
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+            'X-CSRFToken': getCsrfToken(),
+        }
+    });
+}
+
+async function apiPut(endpoint, id, body) {
+    return fetch(formatString(API_URL_BASE, endpoint + "/" + id), {
+        method: "PUT",
         body: JSON.stringify(body),
         credentials: "include",
         headers: {
@@ -295,94 +313,44 @@ class Player extends BoardObject {
     }
 }
 
-// Represents a particular board game and contains most game varibles.
+// Represents the game board.
 class Board {
-    name = "";
     squares = {};
     squareNextId = 0;
-    players = [];
-    rules = new RulesData(1, 6, 1, 4);
     size = new Vector2(20, 15);
     div;
 
-    constructor(name, div, width, height) {
-        this.name = name;
+    constructor(div, size, squares, squareNextId) {
         this.div = div;
-        this.size.x = width;
-        this.size.y = height;
-        this.squareNextId = 0;
+        this.size = size;
+        this.squares = squares;
+        this.squareNextId = squareNextId;
+        this.rebuildLayout();
+    }
+
+    static deserialize(boardData, boardDiv) {
+        let newSqs = {};
+        let newBoard = new Board(boardDiv, boardData.size, null, boardData.squareNextId);
+        // Create the actual objects from the seriziled form.
+        for (let sqId in boardData.squares) {
+            let a = boardData.squares[sqId];
+            let sq = BoardSquare.deserialize(newBoard, sqId, a);
+            newSqs[sqId] = sq;
+        }
+        newBoard.squares = newSqs;
+        newBoard.rebuildLayout();
+        return newBoard;
     }
 
     serialize() {
         let data = {};
-        data.formatVersion = BOARD_FORMAT_VERSION; // Just in case...
-        data.name = this.name;
         data.size = this.size;
-        data.rules = this.rules;
         data.squareNextId = this.squareNextId;
         data.squares = {};
         for (let sqId in this.squares) {
             data.squares[sqId] = this.squares[sqId].serialize();
         }
-        data.players = [];
-        for (let plr of this.players) {
-            data.players.push(plr.serialize());
-        }
         return data;
-    }
-
-    static #convertData(data) {
-        // Update older boards to the current format.
-        switch (data.formatVersion) {
-            case 1:
-                data.rules = new RulesData(1, 6); // Add rules to older boards.
-                for (let plr of data.players) {
-                    plr.squareId = "0";
-                }
-                for (let sqId in data.squares) {
-                    let a = data.squares[sqId];
-                    a.prevId = ""; // TODO: Make this conversion better.
-                }
-                // Fallthrough
-            case 2:
-                data.size = new Vector2(20, 15);
-                break;
-            default:
-                throw "unsupportedFormat"; // Error
-                break;
-        }
-        return data;
-    }
-
-    deserialize(data) {
-        if (data !== null && data !== undefined) {
-            if (data.formatVersion < BOARD_FORMAT_VERSION) {
-                try {
-                    data = Board.#convertData(data); // Try to convert from older format.
-                } catch {
-                    return false;
-                }
-            }
-
-            this.clearLayout(); 
-            this.name = data.name;
-            this.squareNextId = data.squareNextId;
-            this.size = data.size;
-            this.rules = RulesData.deserialize(data.rules);
-            // Create the actual objects from the seriziled form.
-            for (let sqId in data.squares) {
-                let a = data.squares[sqId];
-                let sq = BoardSquare.deserialize(this, sqId, a);
-                this.squares[sqId] = sq;
-            }
-            for (let plr of data.players) {
-                this.players.push(Player.deserialize(this, plr));
-            }
-            this.rebuildLayout(); // Update DOM
-            console.log("Loaded board.");
-            return true;
-        }
-        return false;
     }
 
     updateSize() {
@@ -396,9 +364,6 @@ class Board {
             let sq = this.squares[sqId];
             this.div.appendChild(sq.element);
         }
-        for (let pl of this.players) {
-            this.div.appendChild(pl.element);
-        }
         console.log("Rebuilt board DOM subtree.");
     }
 
@@ -408,10 +373,94 @@ class Board {
             let sq = this.squares[sqId];
             sq.destroy();
         }
-        for (let pl of this.players) {
-            pl.destroy();
+        for (const child of this.div.children) {
+            child.remove();
         }
         this.squares = {};
-        this.players = [];
     }
+}
+
+// Represets a game.
+class Game {
+    id = 0;
+    creatorId = 0;
+    name = "";
+    description = "";
+    rules = new RulesData(1, 6, 1, 4);
+    board;
+    players = [];
+    categories = [];
+
+    constructor(id, creatorId, name, description, rules, board, categories) {
+        this.id = id;
+        this.creatorId = creatorId;
+        this.name = name;
+        this.description = description;
+        this.rules = rules;
+        this.board = board;
+        this.categories = categories;
+
+        board.game = this;
+    }
+
+    serialize() {
+        let data = {};
+        data.format_version = GAME_FORMAT_VERSION; // For later reference in case of format changes.
+        data.id = this.id;
+        data.name = this.name;
+        data.description = this.description;
+        data.rules = this.rules;
+        data.board = this.board.serialize();
+        data.players = [];
+        for (let plr of this.players) {
+            data.players.push(plr.serialize());
+        }
+        data.categories = this.categories;
+        return data;
+    }
+
+    #convertData(data) {
+        // Update older boards to the current format.
+        switch (data.format_version) {
+            case 1:
+                data.rules = new RulesData(1, 6); // Add rules to older boards.
+                for (let plr of data.players) {
+                    plr.squareId = "0";
+                }
+                for (let sqId in data.squares) {
+                    let a = data.squares[sqId];
+                    a.prevId = ""; // TODO: Make this conversion better.
+                }
+                // Fallthrough
+            case 2:
+                data.board.size = new Vector2(20, 15);
+                break;
+            default:
+                throw "unsupportedFormat"; // Error
+                break;
+        }
+        return data;
+    }
+
+    deserialize(data, boardDiv) {
+        if (data.format_version < GAME_FORMAT_VERSION) {
+            try {
+                data = this.#convertData(data); // Try to convert from older format.
+            } catch {
+                return false;
+            }
+        }
+        this.id = data.id;
+        this.name = data.name;
+        this.description = data.description;
+        this.rules = RulesData.deserialize(data.rules);
+        this.board = Board.deserialize(data.board, boardDiv);
+        this.board.rebuildLayout();
+        for (let plr of data.players) {
+            let plrObj = Player.deserialize(this.board, plr)
+            this.players.push(plrObj);
+            this.board.div.appendChild(plrObj.element);
+        }
+        return true;
+    } 
 }

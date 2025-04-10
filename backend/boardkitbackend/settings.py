@@ -133,10 +133,12 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100
 }
 
+LOGIN_REDIRECT_URL = "/"
+
 # Debug stuff
-if DEBUG:
-    INSTALLED_APPS.append("corsheaders")
-    MIDDLEWARE.insert(2, 'corsheaders.middleware.CorsMiddleware')
-    #CORS_ALLOW_ALL_ORIGINS = True
-    CORS_ALLOWED_ORIGINS = ["https://shiny-space-trout-g477r5rr9gj4hv7rg-8001.app.github.dev", "http://localhost:8001"]
-    CORS_ALLOW_CREDENTIALS = True
+# if DEBUG:
+#     INSTALLED_APPS.append("corsheaders")
+#     MIDDLEWARE.insert(2, 'corsheaders.middleware.CorsMiddleware')
+#     #CORS_ALLOW_ALL_ORIGINS = True
+#     CORS_ALLOWED_ORIGINS = ["https://shiny-space-trout-g477r5rr9gj4hv7rg-8001.app.github.dev", "http://localhost:8001"]
+#     CORS_ALLOW_CREDENTIALS = True

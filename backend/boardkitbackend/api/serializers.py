@@ -19,7 +19,8 @@ class GameSerializer(serializers.ModelSerializer):
     creator_id = serializers.ReadOnlyField(source='creator.id')
     class Meta:
         model = Game
-        fields = ["id", "creator_id", "name", "description", "creation_date", "modification_date", "published", "board", "categories"]
+        fields = ["id", "creator_id", "name", "description", "creation_date", "modification_date", "format_version", "published",
+                  "board", "rules", "players", "categories"]
     
     def get_fields(self, *args, **kwargs):
         # Exclude board from multi-object listings.

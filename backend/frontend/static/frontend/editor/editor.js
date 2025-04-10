@@ -10,6 +10,7 @@ const boardArrowsSvg = document.getElementById("boardArrows");
 const newBtn = document.getElementById("newBtn");
 const loadBtn = document.getElementById("loadBtn");
 const saveBtn = document.getElementById("saveBtn");
+const saveAsBtn = document.getElementById("saveAsBtn");
 const playLink = document.getElementById("playLink");
 const nameBox = document.getElementById("nameBox");
 
@@ -25,11 +26,19 @@ const supportErrors = document.querySelectorAll(".supportError");
 const loadingPrompts = document.getElementById("loadingPrompts");
 const loadingCurrent = document.getElementById("loadingCurrent");
 
-let board = new Board("Untitled", boardDiv, 20, 15);
+let board = new Board(boardDiv, new Vector2(20, 15), {}, 0);
+let game = new Game(
+    0, 
+    0,
+    "Untitled",
+    "",
+    new RulesData(1, 6, 1, 4),
+    board,
+    [],
+);
 let boardUnsavedChanges = false;
 let editorState;
 let boardArrowsLines = {};
-let gameId = 0;
 
 // Base class for a UI state. Derived classes encapsulate state-specific behaviour and variables.
 class UIState {
@@ -183,10 +192,10 @@ class EditState extends UIState {
         // Show existing values.
         this.#rdfBoardWidth.value = board.size.x;
         this.#rdfBoardHeight.value = board.size.y;
-        this.#rdfDiceMax.value = board.rules.diceMax;
-        this.#rdfDiceMin.value = board.rules.diceMin;
-        this.#rdfPlayerMax.value = board.rules.playersMax;
-        this.#rdfPlayerMin.value = board.rules.playersMin;
+        this.#rdfDiceMax.value = game.rules.diceMax;
+        this.#rdfDiceMin.value = game.rules.diceMin;
+        this.#rdfPlayerMax.value = game.rules.playersMax;
+        this.#rdfPlayerMin.value = game.rules.playersMin;
     
         this.#rulesDialog.showModal();
     }
@@ -208,10 +217,10 @@ class EditState extends UIState {
         console.log("New rules.");
         fd = new FormData(this.#rulesDialogForm);
 
-        board.rules.diceMin = Number(fd.get("diceMin"));;
-        board.rules.diceMax = Number(fd.get("diceMax"));
-        board.rules.playersMin =  Number(fd.get("playersMin"));
-        board.rules.playersMax = Number(fd.get("playersMax"));
+        game.rules.diceMin = Number(fd.get("diceMin"));;
+        game.rules.diceMax = Number(fd.get("diceMax"));
+        game.rules.playersMin =  Number(fd.get("playersMin"));
+        game.rules.playersMax = Number(fd.get("playersMax"));
         resizeBoard(Number(fd.get("boardWidth")), Number(fd.get("boardHeight")));
         boardUnsavedChanges = true;
     }
@@ -383,14 +392,23 @@ class LinkState extends UIState {
     }
 }
 
-function newBoard() {
-    board = new Board("Untitled", boardDiv, 20, 15);
-    board.rebuildLayout();
+function newGame() {
+    let newBoard = new Board(boardDiv, new Vector2(20, 15), {}, 0);
+    game = new Game(
+        0, 
+        0,
+        "Untitled",
+        "",
+        new RulesData(1, 6, 1, 4),
+        newBoard,
+        [],
+    );
+    game.board.rebuildLayout();
     setupBoard();
     console.log("Created new board.");
 }
 
-function loadBoardJson(json) {
+function loadGameJson(json) {
     let data;
     try {
         data = JSON.parse(json);
@@ -398,11 +416,11 @@ function loadBoardJson(json) {
         console.error("Bad json!");
         return false;
     }
-    return loadBoard(data);
+    return loadGame(data);
 }
 
-function loadBoard(data) {
-    let success = board.deserialize(data);
+function loadGame(data) {
+    let success = game.deserialize(data, boardDiv);
     if (success) {
         setupBoard();
     }
@@ -473,9 +491,11 @@ function resizeBoard(width, height) {
 }
 
 function setupBoard() {
+    board = game.board;
     boardUnsavedChanges = false;
-    nameBox.value = board.name;
-    playLink.href = PLAYER_URL_BASE + board.name;
+    nameBox.value = game.name;
+    playLink.href = PLAYER_URL_BASE + game.id;
+    hideLoading();
     resizeBoard(board.size.x, board.size.y);
     for (let arId in boardArrowsLines) { // Clean up old arrows if present.
         removeArrow(arId);
@@ -510,14 +530,9 @@ function showSupportError() {
         showElement(err); // Show support error.
 }
 
-async function createOnlineGame(name, description, categories, publish, board) {
-    let bodyObj = {
-        name: name,
-        description: description,
-        published: publish,
-        categories: categories,
-        board: board,
-    }
+async function createOnlineGame(game, publish) {
+    let bodyObj = game.serialize();
+    bodyObj.published = publish;
     let response = await apiPost("games", bodyObj);
     if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);
@@ -525,8 +540,13 @@ async function createOnlineGame(name, description, categories, publish, board) {
     return response.json();
 }
 
-async function saveOnlineGame(gameId, board) {
-    
+async function saveOnlineGame(game) {
+    let bodyObj = game.serialize();
+    let response = await apiPut("games", game.id, bodyObj);
+    if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+    }
+    return response.json();
 }
 
 function onPageLoad(event) {
@@ -542,24 +562,22 @@ function onPageLoad(event) {
     }
 
     let params = new URLSearchParams(window.location.search);
-    let onlineGameId = params.get("game");
-    if (onlineGameId !== null) { // If a game is specified in the URL, try to load it.
+    let onlineGameId = Number(params.get("game"));
+    if (onlineGameId !== 0) { // If a game is specified in the URL, try to load it.
         fetchOnlineGame(onlineGameId)
             .then((data) => {
-                let success = loadBoard(data.board);
+                let success = loadGame(data);
                 if (!success)
                     throw new Error("Failed to deserialize board.");
                 playLink.style = null;
-                playLink.href = PLAYER_URL_BASE + onlineGameId;
-                hideLoading();
+                playLink.href = PLAYER_URL_BASE + data.id;
             })
             .catch((error) => {
-                window.alert(error);
+                errorAlert(error);
             })
     }
     else {
-        newBoard();
-        hideLoading();
+        newGame();
     }
 }
 
@@ -569,7 +587,7 @@ function onPageUnload(event) {
 }
 
 function onNameBoxChange(event) {
-    board.name = nameBox.value; // Update name when user changes it.
+    game.name = nameBox.value; // Update name when user changes it.
 }
 
 function onLoadBtnPressed(event) {
@@ -578,13 +596,23 @@ function onLoadBtnPressed(event) {
 
 function onSaveBtnPressed(event) {
     //downloadBoardToFile(board.name, board.serialize())
-    if (gameId > 0) {
-        // TODO
-        window.alert("Not implemented yet!");
+    if (game.id > 0) {
+        saveOnlineGame(game).then((data) => {
+            window.alert("Saved. (Better prompt TDB)");
+            boardUnsavedChanges = false;
+        })
+        .catch((error) => {
+            errorAlert(error);
+        })
     }
     else {
         fileSaveDialog.showModal();
     }
+}
+
+function onSaveAsBtnPressed(event) {
+    //fileSaveDialog.showModal();
+    window.alert("Not implemented yet!");
 }
 
 function onFileOpenDialogClosed(event) {
@@ -598,7 +626,7 @@ function onFileOpenDialogClosed(event) {
     reader = new FileReader();
     // Read file.
     reader.addEventListener("loadend", (e) => {
-        loadBoardJson(reader.result);
+        loadGameJson(reader.result);
     });
     reader.readAsText(file); // Async
 }
@@ -610,18 +638,18 @@ function onFileSaveDialogClosed(event) {
         return;
 
     fd = new FormData(fileSaveDialogForm);
-    name = fd.get("name");
-    desc = fd.get("desc");
-    categories = fd.getAll("categories");
+    game.name = fd.get("name");
+    game.description = fd.get("desc");
+    game.categories = fd.getAll("categories");
     publish = Boolean(fd.get("publish"));
-    serializedBoard = board.serialize();
 
-    createOnlineGame(name, desc, categories, publish, serializedBoard).then((data) => {
+    createOnlineGame(game, publish).then((data) => {
         gameId = data.id;
         board.name = data.name;
+        nameBox.value = board.name;
     })
     .catch((error) => {
-        window.alert(error);
+        errorAlert(error);
     });
 }
 
@@ -631,10 +659,11 @@ function onDialogCanceled(event) {
 
 window.addEventListener("load", onPageLoad);
 window.addEventListener("beforeunload", onPageUnload);
-newBtn.addEventListener("click", (ev) => newBoard());
+newBtn.addEventListener("click", (ev) => newGame());
 loadBtn.addEventListener("click", onLoadBtnPressed);
 saveBtn.addEventListener("click", onSaveBtnPressed);
-nameBox.addEventListener("change", onNameBoxChange)
+saveAsBtn.addEventListener("click", onSaveAsBtnPressed);
+nameBox.addEventListener("change", onNameBoxChange);
 fileOpenDialog.addEventListener("close", onFileOpenDialogClosed);
 fileOpenDialog.addEventListener("cancel", onDialogCanceled);
 fileSaveDialog.addEventListener("close", onFileSaveDialogClosed);

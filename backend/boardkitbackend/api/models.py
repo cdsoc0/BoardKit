@@ -20,7 +20,10 @@ class Game(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True, editable=False)
     modification_date = models.DateTimeField(auto_now=True)
     published = models.BooleanField(default=False)
+    format_version = models.IntegerField(default=4)
     board = models.JSONField()
+    rules = models.JSONField()
+    players = models.JSONField()
     categories = models.ManyToManyField(Category, blank=True, related_name="games_in_category")
 
 @receiver(post_save, sender=User)

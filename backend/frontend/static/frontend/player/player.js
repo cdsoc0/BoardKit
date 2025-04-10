@@ -8,7 +8,16 @@ const rollTxt = document.getElementById("rollTxt");
 const loadingPrompts = document.getElementById("loadingPrompts");
 const loadingCurrent = document.getElementById("loadingCurrent");
 const supportErrors = document.querySelectorAll(".supportError");
-let board = new Board("", boardDiv, 20, 15);
+let board = new Board(boardDiv, new Vector2(20, 15), {}, 0);
+let game = new Game(
+    0, 
+    0,
+    "Untitled",
+    "",
+    new RulesData(1, 6, 1, 4),
+    board,
+    [],
+);
 
 function randint(min, max) {
     min = Math.ceil(min);
@@ -19,13 +28,14 @@ function randint(min, max) {
 function loadGame(id) {
     return fetchOnlineGame(id)
         .then((data) => {
-            let success = board.deserialize(data.board);
+            let success = game.deserialize(data, boardDiv);
             if (!success)
                 throw new Error("Failed to deserialize board.");
             editLink.href = EDITOR_URL_BASE + id;
+            board = game.board;
         })
         .catch((error) => {
-            window.alert(error);
+            errorAlert(error);
         });
 }
 
@@ -105,9 +115,9 @@ function onPageLoad(event) {
 }
 
 function onRollClicked(event) {
-    let roll = randint(board.rules.diceMin, board.rules.diceMax+1);
+    let roll = randint(game.rules.diceMin, game.rules.diceMax+1);
     rollTxt.textContent = roll.toString();
-    movePlayerBy(board.players[0], roll);
+    movePlayerBy(game.players[0], roll);
 }
 
 window.addEventListener("load", onPageLoad);
