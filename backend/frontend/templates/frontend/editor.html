@@ -1,4 +1,4 @@
-{% extends 'shared/global_base.html' %}
+{% extends 'shared/base.html' %}
 {% load static %}
 {% block title %}BoardKit Player{% endblock %}
 {% block head %}
@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="{% static '/frontend/editor/style.css' %}">
 {% endblock %}
 {% block body %}
+    {{ block.super }}
     <noscript>BoardKit requires JavaScript to run, please enable JavaScript in your browser to use BoardKit.</noscript>
     <div id="loadingPrompts">
         <h2>BoardKit is now loading</h2>
@@ -98,6 +99,7 @@
         <dialog id="saveAsDialog">
             <h1>Save Project</h1>
             <form id="saveAsDialogForm" method="dialog">
+                <input id="sadfId" type="hidden" name="id">
                 <label for="sadfName">Name:</label>
                 <input id="sadfName" type="text" name="name" minlength="3" maxlength="50" required><br>
                 <label for="sadfDesc">Description:</label>

@@ -20,6 +20,9 @@ const fileOpenDialogFile = document.getElementById("opdfFile");
 
 const fileSaveDialog = document.getElementById("saveAsDialog");
 const fileSaveDialogForm = document.getElementById("saveAsDialogForm");
+const sadfId = document.getElementById("sadfId");
+const sadfName = document.getElementById("sadfName");
+const sadfDesc = document.getElementById("sadfDesc");
 const sadfCategories = document.getElementById("sadfCategories");
 
 const supportErrors = document.querySelectorAll(".supportError");
@@ -549,6 +552,12 @@ async function saveOnlineGame(game) {
     return response.json();
 }
 
+function showSaveDialog() {
+    sadfName.value = game.name;
+    sadfDesc.value = game.description;
+    fileSaveDialog.showModal();
+}
+
 function onPageLoad(event) {
     if (!apiExists(Element.prototype.replaceChildren)) {
         console.log("replaceChildren not supported!");
@@ -596,23 +605,13 @@ function onLoadBtnPressed(event) {
 
 function onSaveBtnPressed(event) {
     //downloadBoardToFile(board.name, board.serialize())
-    if (game.id > 0) {
-        saveOnlineGame(game).then((data) => {
-            window.alert("Saved. (Better prompt TDB)");
-            boardUnsavedChanges = false;
-        })
-        .catch((error) => {
-            errorAlert(error);
-        })
-    }
-    else {
-        fileSaveDialog.showModal();
-    }
+    sadfId.value = game.id;
+    showSaveDialog();
 }
 
 function onSaveAsBtnPressed(event) {
-    //fileSaveDialog.showModal();
-    window.alert("Not implemented yet!");
+    sadfId.value = 0; // Force creating new game.
+    showSaveDialog();
 }
 
 function onFileOpenDialogClosed(event) {
@@ -632,25 +631,37 @@ function onFileOpenDialogClosed(event) {
 }
 
 function onFileSaveDialogClosed(event) {
-    let btnName, fd, name, desc, categories, publish, serializedBoard;
+    let btnName, fd, id, publish;
     btnName = event.target.returnValue;
     if (btnName !== DIALOG_BUTTON_OK)
         return;
 
     fd = new FormData(fileSaveDialogForm);
+    id = Number(fd.get("id"));
     game.name = fd.get("name");
     game.description = fd.get("desc");
     game.categories = fd.getAll("categories");
     publish = Boolean(fd.get("publish"));
 
-    createOnlineGame(game, publish).then((data) => {
-        gameId = data.id;
-        board.name = data.name;
-        nameBox.value = board.name;
-    })
-    .catch((error) => {
-        errorAlert(error);
-    });
+    if (id > 0) {
+        saveOnlineGame(game).then((data) => {
+            window.alert("Saved. (Better prompt TDB)");
+            boardUnsavedChanges = false;
+        })
+        .catch((error) => {
+            errorAlert(error);
+        });
+    }
+    else {
+        createOnlineGame(game, publish).then((data) => {
+            game.id = data.id;
+            game.name = data.name;
+            nameBox.value = game.name;
+        })
+        .catch((error) => {
+            errorAlert(error);
+        });
+    }
 }
 
 function onDialogCanceled(event) {

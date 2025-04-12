@@ -1,4 +1,4 @@
-{% extends 'shared/global_base.html' %}
+{% extends 'shared/base.html' %}
 {% load static %}
 {% block title %}BoardKit Player{% endblock %}
 {% block head %}
@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="{% static '/frontend/player/style.css' %}">
 {% endblock %}
 {% block body %}
+    {{ block.super }}
         <h1>BoardKit Player Prototype</h1>
         <noscript>BoardKit requires JavaScript to run, please enable JavaScript in your browser to use BoardKit.</noscript>
         <div id="loadingPrompts">

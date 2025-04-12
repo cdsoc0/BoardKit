@@ -1,0 +1,13 @@
+{% extends "shared/global_base.html" %}
+{% block body %}
+    {% if user.is_authenticated %}
+        <form id="authstatus" method="post" action="{% url 'logout' %}">
+            {{ user }}
+            {% csrf_token %}
+            <button type="submit">Log out</button>
+        </form>
+    {% else %}
+        <a id="authstatus" href="/auth/login/">Login</a>
+        {% comment %} <li><a href="/auth/signup/">Sign Up</a></li> {% endcomment %}
+    {% endif %}
+{% endblock %}
