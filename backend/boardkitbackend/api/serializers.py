@@ -11,9 +11,10 @@ class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     date_joined = serializers.DateTimeField(source="user.date_joined", read_only=True)
     is_staff = serializers.BooleanField(source="user.is_staff", read_only=True)
+    games = serializers.PrimaryKeyRelatedField(source="user.games", many=True, read_only=True)
     class Meta:
         model = Profile
-        fields = ["id", "username", "bio", "date_joined", "is_staff", "public"]
+        fields = ["id", "username", "bio", "games", "date_joined", "is_staff", "public"]
 
 class GameSerializer(serializers.ModelSerializer):
     creator_id = serializers.ReadOnlyField(source='creator.id')
@@ -23,11 +24,13 @@ class GameSerializer(serializers.ModelSerializer):
                   "board", "rules", "players", "categories"]
     
     def get_fields(self, *args, **kwargs):
-        # Exclude board from multi-object listings.
+        # Exclude details from multi-object listings.
         fields = super().get_fields(*args, **kwargs)
         request = self.context.get('request')
         if request is not None and not request.parser_context.get('kwargs') and request.method == "GET":
             fields.pop('board', None)
+            fields.pop('rules', None)
+            fields.pop('players', None)
         return fields
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -35,3 +38,11 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ["id", "name", "games"]
+    
+    def get_fields(self, *args, **kwargs):
+        # Exclude games from multi-category listings.
+        fields = super().get_fields(*args, **kwargs)
+        request = self.context.get('request')
+        if request is not None and not request.parser_context.get('kwargs') and request.method == "GET":
+            fields.pop('games', None)
+        return fields

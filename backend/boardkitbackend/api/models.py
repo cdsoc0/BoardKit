@@ -13,8 +13,10 @@ class Category(models.Model):
     name = models.CharField(max_length=20)
 
 class Game(models.Model):
-    creator = models.ForeignKey(User, on_delete=models.CASCADE) # User's games should be deleted upon their account being
-                                                                # deleted.
+    creator = models.ForeignKey(User, 
+                                related_name="games",
+                                on_delete=models.CASCADE) # User's games should be deleted upon their account being
+                                                          # deleted.
     name = models.CharField(max_length=50)
     description = models.CharField(max_length=500)
     creation_date = models.DateTimeField(auto_now_add=True, editable=False)

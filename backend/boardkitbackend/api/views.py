@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.models import Group, User
-from rest_framework import permissions, viewsets, exceptions
+from django.db.models import Q
+from rest_framework import permissions, viewsets, exceptions, filters
 
 from .models import Profile, Category, Game
 from .permissions import IsCreatorOrReadOnlyIfPublic, IsOwnProfileOrReadOnlyIfPublic
@@ -36,9 +37,20 @@ class GameViewSet(viewsets.ModelViewSet):
     serializer_class = GameSerializer
     pagination_class = LargeObjectsPageination
     permission_classes = [IsCreatorOrReadOnlyIfPublic]
+    filter_backends = [filters.SearchFilter]
+    filterset_fields = ['name', 'description']
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
+
+    def get_queryset(self):
+        queryset = self.queryset
+        user = self.request.user
+        if user.is_authenticated:
+            filtered_qs = queryset.filter(Q(creator=user) | Q(published=True))
+        else:
+            filtered_qs = queryset.filter(published=True)
+        return filtered_qs
 
 class CategoryViewSet(viewsets.ModelViewSet):
     """

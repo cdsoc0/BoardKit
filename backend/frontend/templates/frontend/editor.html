@@ -106,10 +106,9 @@
                 <textarea id="sadfDesc" name="desc" rows="10" cols="50" maxlength="500" placeholder="Describe your game here..." required></textarea><br>
                 <label for="sadfCategories">Categories (hold ctrl/cmd for multiselect):</label>
                 <select id="sadfCategories" name="categories" multiple>
-                    <!-- Dynamic -->
-                     <option value="1">Family</option>
-                     <option value="2">Race</option>
-                     <option value="3">Christmas</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
                 </select><br>
                 <label for="sadfPublish">Publish?</label>
                 <input id="sadfPublish" name="publish" type="checkbox" value="1"><br>
