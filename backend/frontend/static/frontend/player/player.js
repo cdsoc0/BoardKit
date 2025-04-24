@@ -18,6 +18,7 @@ let game = new Game(
     board,
     [],
 );
+let currentPlayer = 0;
 
 function randint(min, max) {
     min = Math.ceil(min);
@@ -84,6 +85,10 @@ function doSquareAction(player) {
         case ActionType.JUMP_TO:
             movePlayerTo(player, act.parameters[0]);
             break;
+        case ActionType.ANOTHER_TURN:
+            console.log(currentPlayer);
+            currentPlayer--;
+            break;
         case ActionType.END_GAME:
             window.alert(player.name + " wins!");
             break;
@@ -117,7 +122,12 @@ function onPageLoad(event) {
 function onRollClicked(event) {
     let roll = randint(game.rules.diceMin, game.rules.diceMax+1);
     rollTxt.textContent = roll.toString();
-    movePlayerBy(game.players[0], roll);
+    movePlayerBy(game.players[currentPlayer], roll);
+    
+    if (currentPlayer < game.players.length - 1)
+        currentPlayer++;
+    else
+        currentPlayer = 0;
 }
 
 window.addEventListener("load", onPageLoad);

@@ -88,6 +88,8 @@ class EditState extends UIState {
     #rdfPlayerMin = document.getElementById("rdfPlayerMin");
     #rdfPlayerMax = document.getElementById("rdfPlayerMax");
 
+    #draggedPlayer = null;
+
     #setupSquareElement(square) {
         let elem = square.element;
         elem.draggable = true;
@@ -102,6 +104,20 @@ class EditState extends UIState {
             if (board.squares.hasOwnProperty(square.prevId))
                 makeArrow(square.prevId, square.id);
             boardUnsavedChanges = true;
+        });
+        this.attachListener(elem, "drop", (event) => {
+            if (this.#draggedPlayer) { // We only want to do this stuff if a player is being dragged.
+                let sqElem = event.target;
+                event.preventDefault();
+                this.#draggedPlayer.squareId = sqElem.dataset.squareId;
+                this.#draggedPlayer.update();
+                this.#draggedPlayer = null; // We are no longer dragging a player by this point.
+                boardUnsavedChanges = true;
+            }
+        });
+        this.attachListener(elem, "dragover", (event) => {
+            if (this.#draggedPlayer)
+                event.preventDefault(); // Indicate that players can be dragged onto squares.
         });
         this.attachListener(elem, "contextmenu", (event) => {
             event.preventDefault();
@@ -119,6 +135,15 @@ class EditState extends UIState {
             showElement(this.#asdfDeleteBtn);
             // Reshow the add dialog.
             this.#addSqDialog.showModal();
+        });
+    }
+
+    #setupPlayerToken(player) {
+        let elem = player.element;
+        elem.draggable = true;
+
+        this.attachListener(elem, "dragstart", (event) => {
+            this.#draggedPlayer = player;
         });
     }
 
@@ -252,6 +277,9 @@ class EditState extends UIState {
             let sq = board.squares[sqId];
             this.#setupSquareElement(sq);
         }
+        for (let plr of game.players) { // Setup players.
+            this.#setupPlayerToken(plr);
+        }
     }
 
     exit() {
@@ -259,6 +287,10 @@ class EditState extends UIState {
         hideElement(editTools);
         for (let sqId in board.squares) {
             let e = board.squares[sqId].element;
+            e.draggable = false;
+        }
+        for (let plr of game.players) {
+            let e = plr.element;
             e.draggable = false;
         }
         super.exit();
@@ -353,7 +385,7 @@ class LinkState extends UIState {
                 toSq.prevId = fromSq.id;
                 makeArrow(fromSq.id, toSq.id);
             }
-        })
+        });
         this.attachListener(elem, "contextmenu", (event) => {
             let thisSq, otherSq;
             event.preventDefault();
@@ -543,8 +575,9 @@ async function createOnlineGame(game, publish) {
     return response.json();
 }
 
-async function saveOnlineGame(game) {
+async function saveOnlineGame(game, publish) {
     let bodyObj = game.serialize();
+    bodyObj.published = publish;
     let response = await apiPut("games", game.id, bodyObj);
     if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);
@@ -644,8 +677,9 @@ function onFileSaveDialogClosed(event) {
     publish = Boolean(fd.get("publish"));
 
     if (id > 0) {
-        saveOnlineGame(game).then((data) => {
+        saveOnlineGame(game, publish).then((data) => {
             window.alert("Saved. (Better prompt TDB)");
+            game.published = publish;
             boardUnsavedChanges = false;
         })
         .catch((error) => {

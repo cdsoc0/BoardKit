@@ -318,6 +318,7 @@ class Board {
     squares = {};
     squareNextId = 0;
     size = new Vector2(20, 15);
+    extraElements = [];
     div;
 
     constructor(div, size, squares, squareNextId) {
@@ -357,12 +358,20 @@ class Board {
         this.div.style = `width: ${this.size.x}cm; height: ${this.size.y}cm;`;
     }
 
+    addExtraElement(elem) {
+        this.extraElements.push(elem);
+        this.div.appendChild(elem);
+    }
+
     rebuildLayout() {
         this.updateSize();
         this.div.replaceChildren();
         for (let sqId in this.squares) {
             let sq = this.squares[sqId];
             this.div.appendChild(sq.element);
+        }
+        for (let elem of this.extraElements) {
+            this.div.appendChild(elem);
         }
         console.log("Rebuilt board DOM subtree.");
     }
@@ -377,6 +386,7 @@ class Board {
             child.remove();
         }
         this.squares = {};
+        this.extraElements = [];
     }
 }
 
@@ -459,8 +469,8 @@ class Game {
         for (let plr of data.players) {
             let plrObj = Player.deserialize(this.board, plr)
             this.players.push(plrObj);
-            this.board.div.appendChild(plrObj.element);
+            this.board.addExtraElement(plrObj.element);
         }
         return true;
-    } 
+    }
 }
