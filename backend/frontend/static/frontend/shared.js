@@ -140,7 +140,7 @@ async function fetchOnlineGame(gameId) {
 }
 
 // Application-specific data structures.
-// Composed with Board to store the ruleset.
+// Composed with Game to store the ruleset.
 class RulesData {
     diceMin = 1;
     diceMax = 6;
