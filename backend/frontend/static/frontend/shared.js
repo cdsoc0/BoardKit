@@ -1,8 +1,10 @@
 // Code shared between player and editor.
+const DEBUG = true;
 const CLASS_BOARD_SQUARE = "boardSquare";
 const CLASS_PLAYER_TOKEN = "playerToken";
 const GAME_FORMAT_VERSION = 4;
 const API_URL_BASE = "/api/$0/?format=json";
+const DEFAULT_PLAYER_COLORS = ["#FF0000", "#00FF00", "#FFFF00", "#0000FF", "#FF00FF", "#00FFFF", "#000000", "#FFFFFF"];
 const ActionType = Object.freeze({
     NONE: "none",
     GO_FORWARD: "goForward",
@@ -10,6 +12,8 @@ const ActionType = Object.freeze({
     ANOTHER_TURN: "anotherTurn",
     END_GAME: "endGame",
 });
+
+let currentUIState;
 
 class Vector2 {
     x = 0;
@@ -67,9 +71,9 @@ function hideElement(elem) {
 
 function formatString(format, ...args) {
     // This won't work properly for more than 10 subsitutions, oh well.
-    let ret;
+    let ret = format;
     for (let i = 0; i < args.length; i++) {
-        ret = format.replaceAll("$" + i.toString(), args[i].toString());
+        ret = ret.replaceAll("$" + i.toString(), args[i].toString());
     }
     ret = ret.replaceAll("$$", "$");
     return ret;
@@ -137,6 +141,35 @@ async function fetchOnlineGame(gameId) {
         throw new Error(`HTTP error: ${response.status}`);
     }
     return response.json();
+}
+
+function changeState(newState) {
+    let oldState = currentUIState; // Get current state.
+    
+    if (typeof oldState !== "undefined")
+        oldState.exit(); // Exit old state.
+    newState.enter(); // Enter new state.
+
+    currentUIState = newState;
+}
+
+// Base class for a UI state. Derived classes encapsulate state-specific behaviour and variables.
+class UIState {
+    eventAbortCon;
+
+    enter() {
+        this.eventAbortCon = new AbortController(); // AbortControllers are one time use only.
+    }
+
+    exit() {
+        this.eventAbortCon.abort(); // Remove all event listeners attached upon exiting state.
+    }
+
+    // Utility function for derived classes to reuse. Wrapper around the standard event listener that automatically binds 'this'
+    // to the state instance and provides the abort signal implicity.
+    attachListener(target, eventName, listener) {
+        target.addEventListener(eventName, listener.bind(this), {signal: this.eventAbortCon.signal})
+    }
 }
 
 // Application-specific data structures.
@@ -302,6 +335,11 @@ class Player extends BoardObject {
         return data;
     }
 
+    moveToSquare(squareId) {
+        this.squareId = squareId;
+        this.update();
+    }
+
     update() {
         console.log("update tok");
         let sq = this.board.squares[this.squareId];
@@ -363,6 +401,12 @@ class Board {
         this.div.appendChild(elem);
     }
 
+    removeExtraElementAt(idx) {
+        let exElem = this.extraElements[idx];
+        this.extraElements.splice(idx, 1);
+        this.div.replaceChildren(...this.extraElements);
+    }
+
     rebuildLayout() {
         this.updateSize();
         this.div.replaceChildren();
@@ -411,6 +455,20 @@ class Game {
         this.categories = categories;
 
         board.game = this;
+    }
+
+    addPlayer(player) {
+        this.players.push(player);
+        this.board.addExtraElement(player.element);
+    }
+
+    removePlayer(player) {
+        let idx = this.players.indexOf(player);
+        if (idx < 0)
+            return;
+
+        this.players.splice(idx, 1);
+        this.board.removeExtraElementAt(idx);
     }
 
     serialize() {
@@ -468,9 +526,25 @@ class Game {
         this.board.rebuildLayout();
         for (let plr of data.players) {
             let plrObj = Player.deserialize(this.board, plr)
-            this.players.push(plrObj);
-            this.board.addExtraElement(plrObj.element);
+            this.addPlayer(plrObj);
         }
         return true;
     }
+}
+
+// This is a hacky workaround for a broken Edge extension that is force-installed on the college computers hanging the app half the time.
+if (DEBUG) {
+    let inter = setInterval(() => {
+        let brokenDiv = document.getElementById("reader-view");
+        if (brokenDiv) {
+            console.log("Trying to kill...");
+            try {
+                brokenDiv.remove();
+                clearInterval(inter);
+            }
+            catch {
+                console.log("Could not kill!");
+            }
+        }
+    }, 100);
 }

@@ -40,27 +40,7 @@ let game = new Game(
     [],
 );
 let boardUnsavedChanges = false;
-let editorState;
 let boardArrowsLines = {};
-
-// Base class for a UI state. Derived classes encapsulate state-specific behaviour and variables.
-class UIState {
-    eventAbortCon;
-
-    enter() {
-        this.eventAbortCon = new AbortController(); // AbortControllers are one time use only.
-    }
-
-    exit() {
-        this.eventAbortCon.abort(); // Remove all event listeners attached upon entering state.
-    }
-
-    // Utility function for derived classes to reuse. Wrapper around the standard event listener that automatically binds 'this'
-    // to the state instance and provides the abort signal implicity.
-    attachListener(target, eventName, listener) {
-        target.addEventListener(eventName, listener.bind(this), {signal: this.eventAbortCon.signal})
-    }
-}
 
 // General editing state: Allows adding, removing and moving squares and assigning rulesets.
 class EditState extends UIState {
@@ -109,8 +89,7 @@ class EditState extends UIState {
             if (this.#draggedPlayer) { // We only want to do this stuff if a player is being dragged.
                 let sqElem = event.target;
                 event.preventDefault();
-                this.#draggedPlayer.squareId = sqElem.dataset.squareId;
-                this.#draggedPlayer.update();
+                this.#draggedPlayer.moveToSquare(sqElem.dataset.squareId);
                 this.#draggedPlayer = null; // We are no longer dragging a player by this point.
                 boardUnsavedChanges = true;
             }
@@ -145,6 +124,7 @@ class EditState extends UIState {
         this.attachListener(elem, "dragstart", (event) => {
             this.#draggedPlayer = player;
         });
+        showElement(elem);
     }
 
     #onAddSquareButtonClicked(event) {
@@ -235,9 +215,19 @@ class EditState extends UIState {
             minElement.max = maxElement.value;
         }
     }
+
+    #addPlayer(player) {
+        game.addPlayer(player);
+        this.#setupPlayerToken(player);
+    }
+
+    #removePlayer(player) {
+        game.removePlayer(player);
+    }
     
     #onRulesDialogClosed(event) {
         let btnName, fd;
+        let oldPlayerMax = game.rules.playersMax, newPlayerMax = 0, additionalPlrs = 0;
         btnName = event.target.returnValue;
         if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
             return;
@@ -248,8 +238,17 @@ class EditState extends UIState {
         game.rules.diceMin = Number(fd.get("diceMin"));;
         game.rules.diceMax = Number(fd.get("diceMax"));
         game.rules.playersMin =  Number(fd.get("playersMin"));
-        game.rules.playersMax = Number(fd.get("playersMax"));
+        newPlayerMax = Number(fd.get("playersMax"));
+        game.rules.playersMax = newPlayerMax;
         resizeBoard(Number(fd.get("boardWidth")), Number(fd.get("boardHeight")));
+
+        if (newPlayerMax > oldPlayerMax) {
+            additionalPlrs = newPlayerMax - oldPlayerMax;
+            for (let i = 0; i < additionalPlrs; i++) {
+                let newIdx = oldPlayerMax + i;
+                this.#addPlayer(new Player(board, "Player " + newIdx.toString(), DEFAULT_PLAYER_COLORS[newIdx], "0"))
+            }
+        }
         boardUnsavedChanges = true;
     }
 
@@ -260,9 +259,11 @@ class EditState extends UIState {
     enter() {
         super.enter();
         // Setup listeners.
+        // Toolbar buttons
         this.attachListener(this.#editAddSqBtn, "click", this.#onAddSquareButtonClicked);
         this.attachListener(this.#editLinkSqBtn, "click", this.#onLinkSquareButtonClicked);
         this.attachListener(this.#editRulesBtn, "click", this.#onRulesButtonClicked);
+        // Dialogs
         this.attachListener(this.#addSqDialog, "close", this.#onAddSquareDialogClosed);
         this.attachListener(this.#asdfActionType, "change", this.#onASDFActionTypeChanged)
         this.attachListener(this.#addSqDialog, "cancel", onDialogCanceled);
@@ -292,6 +293,7 @@ class EditState extends UIState {
         for (let plr of game.players) {
             let e = plr.element;
             e.draggable = false;
+            hideElement(e);
         }
         super.exit();
     }
@@ -541,16 +543,6 @@ function setupBoard() {
             makeArrow(sqId, sq.nextId);
     }
     changeState(new EditState());
-}
-
-function changeState(newState) {
-    let oldState = editorState; // Get current state.
-    
-    if (typeof oldState !== "undefined")
-        oldState.exit(); // Exit old state.
-    newState.enter(); // Enter new state.
-
-    editorState = newState;
 }
 
 function hideLoading() {
