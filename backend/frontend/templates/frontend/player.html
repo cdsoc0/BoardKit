@@ -22,8 +22,21 @@
                 <!-- Dynamic content inserted here. -->
                 </div>
             </div>
-            <button id="rollBtn">Roll</button>
-            <p id="rollTxt"></p>
+            <button id="playBtn">Play</button>
+            <dialog id="setupPlrsDialog">
+                <h1>Configure Players</h1>
+                <form id="setupPlrsDialogForm" method="dialog">
+                    <ol id="spdfPlrList">
+                        <!-- Dynamic content inserted here. -->
+                    </ol>
+                    <input type="submit" value="OK">&nbsp;
+                    <input type="submit" value="Cancel" formnovalidate>&nbsp;
+                </form>
+            </dialog>
+            <div id="playInfo" style="display: none;">
+                <button id="rollBtn">Roll</button>
+                <p id="rollTxt"></p>
+            </div>
         </div>
         <script src="{% static '/frontend/shared.js' %}"></script>
         <script src="{% static '/frontend/player/player.js' %}"></script>
