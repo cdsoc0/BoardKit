@@ -227,7 +227,7 @@ class EditState extends UIState {
     
     #onRulesDialogClosed(event) {
         let btnName, fd;
-        let oldPlayerMax = game.rules.playersMax, newPlayerMax = 0, additionalPlrs = 0;
+        let oldPlayerMax = 0, newPlayerMax = 0, additionalPlrs = 0;
         btnName = event.target.returnValue;
         if (btnName !== DIALOG_BUTTON_OK) // Only handle form data when user presses 'ok' button
             return;
@@ -242,11 +242,17 @@ class EditState extends UIState {
         game.rules.playersMax = newPlayerMax;
         resizeBoard(Number(fd.get("boardWidth")), Number(fd.get("boardHeight")));
 
+        oldPlayerMax = game.players.length;
         if (newPlayerMax > oldPlayerMax) {
             additionalPlrs = newPlayerMax - oldPlayerMax;
             for (let i = 0; i < additionalPlrs; i++) {
                 let newIdx = oldPlayerMax + i;
                 this.#addPlayer(new Player(board, "Player " + newIdx.toString(), DEFAULT_PLAYER_COLORS[newIdx], "0"))
+            }
+        }
+        else if (newPlayerMax < oldPlayerMax) {
+            for (let i = oldPlayerMax - 1; i >= newPlayerMax; i--) {
+                this.#removePlayer(game.players[i]);
             }
         }
         boardUnsavedChanges = true;
@@ -464,7 +470,7 @@ function loadGame(data) {
     return success;
 }
 
-function downloadBoardToFile(name, data) {
+function downloadGameToFile(name, data) {
     // Awful kludge. Only way I could find to do this cross-browser.
     let json = JSON.stringify(data);
     let file = new Blob([json], {type: "application/x-boardkit-game"});

@@ -296,6 +296,8 @@ class BoardSquare extends BoardObject {
             this.label = label;
             this.color = color;
             this.action = action;
+
+            this.element.textContent = label;
         }
         super.update();
     }
@@ -404,7 +406,7 @@ class Board {
     removeExtraElementAt(idx) {
         let exElem = this.extraElements[idx];
         this.extraElements.splice(idx, 1);
-        this.div.replaceChildren(...this.extraElements);
+        this.div.removeChild(exElem);
     }
 
     rebuildLayout() {
