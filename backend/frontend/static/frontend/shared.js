@@ -446,6 +446,7 @@ class Game {
     board;
     players = [];
     categories = [];
+    published = false;
 
     constructor(id, creatorId, name, description, rules, board, categories) {
         this.id = id;
@@ -486,6 +487,7 @@ class Game {
             data.players.push(plr.serialize());
         }
         data.categories = this.categories;
+        data.published = this.published;
         return data;
     }
 
@@ -523,6 +525,8 @@ class Game {
         this.id = data.id;
         this.name = data.name;
         this.description = data.description;
+        this.published = data.published;
+        this.categories = data.categories;
         this.rules = RulesData.deserialize(data.rules);
         this.board = Board.deserialize(data.board, boardDiv);
         this.board.rebuildLayout();

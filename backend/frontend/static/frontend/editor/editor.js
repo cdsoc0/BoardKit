@@ -23,6 +23,7 @@ const fileSaveDialogForm = document.getElementById("saveAsDialogForm");
 const sadfId = document.getElementById("sadfId");
 const sadfName = document.getElementById("sadfName");
 const sadfDesc = document.getElementById("sadfDesc");
+const sadfPublish = document.getElementById("sadfPublish");
 const sadfCategories = document.getElementById("sadfCategories");
 
 const supportErrors = document.querySelectorAll(".supportError");
@@ -586,6 +587,13 @@ async function saveOnlineGame(game, publish) {
 function showSaveDialog() {
     sadfName.value = game.name;
     sadfDesc.value = game.description;
+    sadfPublish.checked = game.published;
+    for (let op of sadfCategories.children) {
+        if (game.categories.includes(Number(op.value)))
+            op.selected = true;
+        else
+            op.selected = false;
+    }
     fileSaveDialog.showModal();
 }
 
@@ -636,7 +644,7 @@ function onLoadBtnPressed(event) {
 
 function onSaveBtnPressed(event) {
     //downloadBoardToFile(board.name, board.serialize())
-    sadfId.value = game.id;
+    sadfId.value = game.id; // Set hidden field containing the ID of the game to save.
     showSaveDialog();
 }
 
@@ -676,7 +684,7 @@ function onFileSaveDialogClosed(event) {
 
     if (id > 0) {
         saveOnlineGame(game, publish).then((data) => {
-            window.alert("Saved. (Better prompt TDB)");
+            window.alert("Saved new version.");
             game.published = publish;
             boardUnsavedChanges = false;
         })
@@ -688,6 +696,7 @@ function onFileSaveDialogClosed(event) {
         createOnlineGame(game, publish).then((data) => {
             game.id = data.id;
             game.name = data.name;
+            game.published = publish;
             nameBox.value = game.name;
         })
         .catch((error) => {

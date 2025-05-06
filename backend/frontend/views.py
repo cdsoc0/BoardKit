@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.db.models import Q
 from django.contrib.auth.forms import *
 from django.contrib.auth import authenticate, login
 from .forms import *
@@ -20,6 +21,19 @@ class EditorView(TemplateView):
 
 class PlayerView(TemplateView):
     template_name = 'frontend/player.html'
+
+class BrowseView(TemplateView):
+    template_name = 'frontend/browse.html'
+    extra_context = {'categories': Category.objects.all()}
+
+    def get(self, request, *args, **kwargs):
+        wanted_categories = request.GET.getlist('incat')
+
+        if len(wanted_categories) > 0:
+            games = Game.objects.filter(categories__in=wanted_categories, published=True).distinct()
+        else:
+            games = Game.objects.filter(published=True)
+        return super().get(request, *args, **kwargs, selected_games=games,)
 
 def sign_up(request):
     if request.method == 'POST':
