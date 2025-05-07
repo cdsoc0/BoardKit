@@ -1,5 +1,5 @@
 // Code shared between player and editor.
-const DEBUG = true;
+const DEBUG = false;
 const CLASS_BOARD_SQUARE = "boardSquare";
 const CLASS_PLAYER_TOKEN = "playerToken";
 const GAME_FORMAT_VERSION = 4;
@@ -80,31 +80,20 @@ function formatString(format, ...args) {
 }
 
 function errorAlert(error) {
-    window.alert(error + "\n\n" + error.stack);
-}
-
-function getCookiesAsObj() {
-    // WHY is document.cookie a string???
-    // This doesn't handle url-encoding but I can't be bothered right now.
-    let obj = {};
-    let pairs = document.cookie.split("; ");
-    for (let pairStr of pairs) {
-        let pairArr = pairStr.split("=");
-        let key = pairArr[0];
-        let val = pairArr[1];
-        obj[key] = val;
-    }
-    return obj;
+    if (DEBUG)
+        window.alert(error + "\n\n" + error.stack);
+    else
+        window.alert(error);
 }
 
 function getCsrfToken() {
     let cookie = document.cookie;
-    let startIdx = cookie.indexOf("csrftoken");
-    let endIdx = cookie.indexOf("; ", startIdx);
-    if (endIdx < 0)
-        endIdx = cookie.length;
-    let kvPair = cookie.substring(startIdx, endIdx).split("=");
-    return kvPair[1];
+    let startIdx = cookie.indexOf("csrftoken"); // Find the start of the cookie we want.
+    let endIdx = cookie.indexOf("; ", startIdx); // Find the end.
+    if (endIdx < 0) // If there is no semicolon then the 'csrftoken' cookie will be the only cookie.
+        endIdx = cookie.length; // Use the entire string.
+    let kvPair = cookie.substring(startIdx, endIdx).split("="); // Get the key and value as seperate strings.
+    return kvPair[1]; // Return the value.
 }
 
 async function apiGet(endpoint) {
@@ -118,7 +107,7 @@ async function apiPost(endpoint, body) {
         credentials: "include",
         headers: {
             "Content-Type": "application/json",
-            'X-CSRFToken': getCsrfToken(),
+            'X-CSRFToken': getCsrfToken(), // Stop cross-site request forgery.
         }
     });
 }
@@ -141,6 +130,19 @@ async function fetchOnlineGame(gameId) {
         throw new Error(`HTTP error: ${response.status}`);
     }
     return response.json();
+}
+
+async function fetchUser(userId) {
+    let response = await apiGet("users/" + userId);
+    if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+    }
+    return response.json();
+}
+
+// Reusable callback
+function onDialogCanceled(event) {
+    event.target.returnValue = "esc"; // Act like the cancel button was pressed upon Escape being pressed.
 }
 
 function changeState(newState) {
@@ -267,7 +269,7 @@ class BoardSquare extends BoardObject {
         elem.textContent = label;
         elem.style.cssText = `top: ${position.y}px;
             left: ${position.x}px;
-            --color: ${color}`;
+            --color: ${color}`; // Set per-instance CSS.
         elem.setAttribute("data-square-id", id); // For finding Square from element.
         
         this.element = elem;
@@ -292,7 +294,7 @@ class BoardSquare extends BoardObject {
     }
 
     update(label, color, action) {
-        if (arguments.length > 0) {
+        if (arguments.length > 0) { // If we are calling this with parameters.
             this.label = label;
             this.color = color;
             this.action = action;
@@ -343,6 +345,7 @@ class Player extends BoardObject {
     }
 
     update() {
+        // Update the div so its state matches that of the player.
         console.log("update tok");
         let sq = this.board.squares[this.squareId];
         let sqRect = sq.element.getBoundingClientRect();
@@ -398,7 +401,7 @@ class Board {
         this.div.style = `width: ${this.size.x}cm; height: ${this.size.y}cm;`;
     }
 
-    addExtraElement(elem) {
+    addExtraElement(elem) { // For addiontial items that need to be children of the board's div but are not part of the board.
         this.extraElements.push(elem);
         this.div.appendChild(elem);
     }
@@ -409,14 +412,14 @@ class Board {
         this.div.removeChild(exElem);
     }
 
-    rebuildLayout() {
+    rebuildLayout() { // Fix DOM state.
         this.updateSize();
-        this.div.replaceChildren();
-        for (let sqId in this.squares) {
+        this.div.replaceChildren(); // Get rid of old elements.
+        for (let sqId in this.squares) { // Add squares.
             let sq = this.squares[sqId];
             this.div.appendChild(sq.element);
         }
-        for (let elem of this.extraElements) {
+        for (let elem of this.extraElements) { // Add extras.
             this.div.appendChild(elem);
         }
         console.log("Rebuilt board DOM subtree.");
@@ -462,7 +465,7 @@ class Game {
 
     addPlayer(player) {
         this.players.push(player);
-        this.board.addExtraElement(player.element);
+        this.board.addExtraElement(player.element); // Make the token visible.
     }
 
     removePlayer(player) {

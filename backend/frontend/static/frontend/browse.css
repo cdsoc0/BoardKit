@@ -1,0 +1,9 @@
+.searchLayout {
+    display: flex;
+    flex-direction: row;
+    padding-left: 10px;
+}
+
+.sidebar {
+    padding-right: 10px;
+}

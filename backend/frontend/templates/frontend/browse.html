@@ -1,39 +1,49 @@
 {% extends 'shared/base.html' %}
+{% load static %}
 {% block title %}Browse Games - BoardKit{% endblock %}
+{% block head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static '/frontend/browse.css' %}">
+{% endblock %}
 {% block body %}
     {{ block.super }}
     <h1>Browse Games</h1>
-    <div class="sidebar">
-        <form>
-            <fieldset>
-                <label for="searchBox">Search</label>
-                <input id="searchBox" type="search" name="search">
-            </fieldset>
-            <fieldset>
-                <legend>Categories</legend>
-                <select name="incat" multiple>
+    <div class="searchLayout">
+        <aside class="sidebar">
+            <form>
+                <fieldset>
+                    <legend>Search</legend>
+                    <input id="searchBox" type="search" name="search">
+                </fieldset>
+                <fieldset>
+                    <legend>Categories</legend>
                     {% for category in categories %}
-                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        <label>
+                            <input name="incat" type="checkbox" value="{{ category.id }}">
+                            {{ category.name }}
+                        </label>
+                        <br>
                     {% endfor %}
-                </select>
-            </fieldset>
-            <input type="submit" value="Update">
-        </form>
+                </fieldset>
+                <input type="submit" value="Search">
+            </form>
+        </aside>
+        <main>
+            {% for game in selected_games %}
+                <article>
+                    <h2><a href="/player/?game={{ game.id }}">{{ game.name }}</a></h2>
+                    <cite>By {{ game.creator.username }}<br>
+                        Last Modified: <time datetime="{{ game.modification_date|date:'Y-m-d H:i\:s' }}">{{ game.modification_date }}</time>
+                    </cite>
+                    <p>{{ game.description }}</p>
+                    <ul class="categoryList">
+                        {% for category in game.categories.all %}
+                            <li class="categoryLabel">{{ category.name }}</li>
+                        {% endfor %}
+                    </ul>
+                </article>
+            {% endfor %}
+        </main>
     </div>
-    <main>
-        {% for game in selected_games %}
-            <article>
-                <h2><a href="/player/?game={{ game.id }}">{{ game.name }}</a></h2>
-                <cite>By {{ game.creator.username }}<br>
-                    Last Modified: <time datetime="{{ game.modification_date|date:'Y-m-d H:i\:s' }}">{{ game.modification_date }}</time>
-                </cite>
-                <p>{{ game.description }}</p>
-                <ul class="categoryList">
-                    {% for category in game.categories.all %}
-                        <li class="categoryLabel">{{ category.name }}</li>
-                    {% endfor %}
-                </ul>
-            </article>
-        {% endfor %}
-    </main>
+    
 {% endblock %}

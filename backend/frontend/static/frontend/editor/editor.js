@@ -2,6 +2,9 @@ const PLAYER_URL_BASE = "../player?game=";
 const DIALOG_BUTTON_OK = "OK";
 const DIALOG_BUTTON_DELETE = "Delete";
 const DIALOG_BUTTON_SET_TARGET = "Set target";
+const SAVE_ERROR_LOGIN_NEEDED = "You need to login in order to save online.";
+const SAVE_ERROR_PERMISSION = "You do not have permission to save over this slot, try 'Save As' to create a remix instead.";
+const SAVE_ERROR_FALLBACK = "An unexpected error occurred while saving. HTTP status: $0";
 
 const appContainer = document.getElementById("appContainer");
 const boardDiv = document.getElementById("board");
@@ -11,12 +14,19 @@ const newBtn = document.getElementById("newBtn");
 const loadBtn = document.getElementById("loadBtn");
 const saveBtn = document.getElementById("saveBtn");
 const saveAsBtn = document.getElementById("saveAsBtn");
+const uploadBtn = document.getElementById("uploadBtn");
+const downloadBtn = document.getElementById("downloadBtn");
 const playLink = document.getElementById("playLink");
 const nameBox = document.getElementById("nameBox");
 
 const fileOpenDialog = document.getElementById("openDialog");
 const fileOpenDialogForm = document.getElementById("openDialogForm");
 const fileOpenDialogFile = document.getElementById("opdfFile");
+
+const onlineOpenDialog = document.getElementById("onlineOpenDialog");
+const onlineOpenDialogForm = document.getElementById("onlineOpenForm");
+const oofStatus = document.getElementById("oofStatus");
+const oofItems = document.getElementById("oofItems");
 
 const fileSaveDialog = document.getElementById("saveAsDialog");
 const fileSaveDialogForm = document.getElementById("saveAsDialogForm");
@@ -30,6 +40,7 @@ const supportErrors = document.querySelectorAll(".supportError");
 const loadingPrompts = document.getElementById("loadingPrompts");
 const loadingCurrent = document.getElementById("loadingCurrent");
 
+let userId = 0;
 let board = new Board(boardDiv, new Vector2(20, 15), {}, 0);
 let game = new Game(
     0, 
@@ -579,7 +590,19 @@ async function saveOnlineGame(game, publish) {
     bodyObj.published = publish;
     let response = await apiPut("games", game.id, bodyObj);
     if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
+        let errorTxt = "";
+        switch (response.status) {
+            case 401: // Unauthorized.
+                errorTxt = SAVE_ERROR_LOGIN_NEEDED;
+                break;
+            case 403: // Forbidden.
+                errorTxt = SAVE_ERROR_PERMISSION;
+                break;
+            default:
+                errorTxt = formatString(SAVE_ERROR_FALLBACK, response.status);
+                break;
+        }
+        throw new Error(errorTxt);
     }
     return response.json();
 }
@@ -609,6 +632,9 @@ function onPageLoad(event) {
         return false;
     }
 
+    let userIdInput = document.getElementById("userId"); // Get user ID.
+    userId = userIdInput.value;
+
     let params = new URLSearchParams(window.location.search);
     let onlineGameId = Number(params.get("game"));
     if (onlineGameId !== 0) { // If a game is specified in the URL, try to load it.
@@ -622,7 +648,7 @@ function onPageLoad(event) {
             })
             .catch((error) => {
                 errorAlert(error);
-            })
+            });
     }
     else {
         newGame();
@@ -639,11 +665,16 @@ function onNameBoxChange(event) {
 }
 
 function onLoadBtnPressed(event) {
-    fileOpenDialog.showModal();
+    // Didn't finish this, sorry!
+    fetchUser(userId).then((data) => {
+        for (game in data.games) {
+
+        }
+    })
+    onlineOpenDialog.showModal();
 }
 
 function onSaveBtnPressed(event) {
-    //downloadBoardToFile(board.name, board.serialize())
     sadfId.value = game.id; // Set hidden field containing the ID of the game to save.
     showSaveDialog();
 }
@@ -651,6 +682,14 @@ function onSaveBtnPressed(event) {
 function onSaveAsBtnPressed(event) {
     sadfId.value = 0; // Force creating new game.
     showSaveDialog();
+}
+
+function onUploadBtnPressed(event) {
+    fileOpenDialog.showModal();
+}
+
+function onDownloadBtnPressed(event) {
+    downloadGameToFile(game.name, game.serialize());
 }
 
 function onFileOpenDialogClosed(event) {
@@ -669,7 +708,27 @@ function onFileOpenDialogClosed(event) {
     reader.readAsText(file); // Async
 }
 
-function onFileSaveDialogClosed(event) {
+function onOnlineOpenDialogClosed(event) {
+    let btnName, fd, gameId;
+    btnName = event.target.returnValue;
+    if (btnName !== DIALOG_BUTTON_OK)
+        return;
+
+    gameId = fd.get("gameId");
+    fetchOnlineGame(gameId)
+        .then((data) => {
+            let success = loadGame(data);
+            if (!success)
+                throw new Error("Failed to deserialize board.");
+            playLink.style = null;
+            playLink.href = PLAYER_URL_BASE + data.id;
+        })
+        .catch((error) => {
+            errorAlert(error);
+    });
+}
+
+function onOnlineSaveDialogClosed(event) {
     let btnName, fd, id, publish;
     btnName = event.target.returnValue;
     if (btnName !== DIALOG_BUTTON_OK)
@@ -705,18 +764,18 @@ function onFileSaveDialogClosed(event) {
     }
 }
 
-function onDialogCanceled(event) {
-    event.target.returnValue = "esc"; // Act like the cancel button was pressed upon Escape being pressed.
-}
-
 window.addEventListener("load", onPageLoad);
 window.addEventListener("beforeunload", onPageUnload);
 newBtn.addEventListener("click", (ev) => newGame());
 loadBtn.addEventListener("click", onLoadBtnPressed);
 saveBtn.addEventListener("click", onSaveBtnPressed);
 saveAsBtn.addEventListener("click", onSaveAsBtnPressed);
+uploadBtn.addEventListener("click", onUploadBtnPressed);
+downloadBtn.addEventListener("click", onDownloadBtnPressed);
 nameBox.addEventListener("change", onNameBoxChange);
 fileOpenDialog.addEventListener("close", onFileOpenDialogClosed);
 fileOpenDialog.addEventListener("cancel", onDialogCanceled);
-fileSaveDialog.addEventListener("close", onFileSaveDialogClosed);
+fileSaveDialog.addEventListener("close", onOnlineSaveDialogClosed);
 fileSaveDialog.addEventListener("cancel", onDialogCanceled);
+onlineOpenDialog.addEventListener("close", onOnlineOpenDialogClosed);
+onlineOpenDialog.addEventListener("cancel", onDialogCanceled);

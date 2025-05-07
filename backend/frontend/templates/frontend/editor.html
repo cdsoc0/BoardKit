@@ -1,4 +1,4 @@
-{% extends 'shared/base.html' %}
+{% extends 'shared/global_base.html' %}
 {% load static %}
 {% block title %}BoardKit Editor{% endblock %}
 {% block head %}
@@ -7,6 +7,7 @@
 {% endblock %}
 {% block body %}
     {{ block.super }}
+    
     <noscript>BoardKit requires JavaScript to run, please enable JavaScript in your browser to use BoardKit.</noscript>
     <div id="loadingPrompts">
         <h2>BoardKit is now loading</h2>
@@ -24,16 +25,30 @@
                             aria-expanded="false">File <span class="caret"></span></a>
                         <ul class="dropdown-menu">
                             <li><a id="newBtn" href="#">New</a></li>
-                            <li><a id="loadBtn" href="#">Load...</a></li>
-                            <li><a id="saveBtn" href="#">Save</a></li>
+                            {% comment %} <li><a id="loadBtn" href="#">Load...</a></li> {% endcomment %}
+                            <li><a id="saveBtn" href="#">Save...</a></li>
                             <li><a id="saveAsBtn" href="#">Save as...</a></li>
-                            <!-- <li role="separator" class="divider"></li> -->
+                            <li role="separator" class="divider"></li>
+                            <li><a id="uploadBtn" href="#">Upload</a></li>
+                            <li><a id="downloadBtn" href="#">Download</a></li>
                         </ul>
                     </div>
                 </li>
                 <li><input id="nameBox" class="form-control" type="text" placeholder="Project Name"></li>
                 <li><a id="playLink" href="../player">Play</a></li>
             </ul>
+            {% if user.is_authenticated %}
+                <form id="authstatus" method="post" action="{% url 'logout' %}">
+                    {{ user }}
+                    {% csrf_token %}
+                    <button type="submit">Log out</button>
+                </form>
+                <!-- Data for JS to fetch. -->
+                <input id="userId" type="hidden" value="{{ user.id }}">
+            {% else %}
+                <a id="authstatus" href="/auth/login/">Login</a>
+                <input id="userId" type="hidden" value="0">
+            {% endif %}
         </nav>
 
         <div id="editTools">
@@ -89,9 +104,20 @@
             </form>
         </dialog>
         <dialog id="openDialog">
-            <h1>Open Project</h1>
+            <h1>Import Project File</h1>
             <form id="openDialogForm" method="dialog">
                 <input id="opdfFile" name="boardFile" type="file" accept=".boardkit" required>
+                <input type="submit" value="OK">
+                <input type="submit" value="Cancel" formnovalidate>
+            </form>
+        </dialog>
+        <dialog id="onlineOpenDialog">
+            <h1>Open Project</h1>
+            <form id="onlineOpenForm" method="dialog">
+                <p id="oofStatus">Loading...</p>
+                <div id="oofItems" class="scrollable" style="display: none;">
+                    <!-- Dynamic content inserted here. -->
+                </div>
                 <input type="submit" value="OK">
                 <input type="submit" value="Cancel" formnovalidate>
             </form>

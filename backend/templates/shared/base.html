@@ -3,17 +3,18 @@
     <nav class="navbar navbar-default">
         <a class="navbar-brand" href="/">BoardKit</a>
         <ul class="nav navbar-nav">
+            <li><a href="{% url 'frontend:editor' %}">Create</a></li>
             <li><a href="{% url 'frontend:browse' %}">Browse</a></li>
         </ul>
+        {% if user.is_authenticated %}
+            <form id="authstatus" method="post" action="{% url 'logout' %}">
+                {{ user }}
+                {% csrf_token %}
+                <button type="submit">Log out</button>
+            </form>
+        {% else %}
+            <a id="authstatus" href="/auth/login/">Login</a>
+            {% comment %} <li><a href="/auth/signup/">Sign Up</a></li> {% endcomment %}
+        {% endif %}
     </nav>
-    {% if user.is_authenticated %}
-        <form id="authstatus" method="post" action="{% url 'logout' %}">
-            {{ user }}
-            {% csrf_token %}
-            <button type="submit">Log out</button>
-        </form>
-    {% else %}
-        <a id="authstatus" href="/auth/login/">Login</a>
-        {% comment %} <li><a href="/auth/signup/">Sign Up</a></li> {% endcomment %}
-    {% endif %}
 {% endblock %}

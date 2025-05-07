@@ -1,3 +1,4 @@
+const DIALOG_BUTTON_OK = "OK";
 const EDITOR_URL_BASE = "../editor?game=";
 const PLAYER_MOVEMENT_DELAY = 500;
 const PLAYER_CONFIG_ITEM_BODY = '<input type="checkbox" name="plrEnabled" title="Enable player $0" checked> \
@@ -36,6 +37,8 @@ class SetupState extends UIState {
     #onSetupDialogClosed(event) {
         let fd, btnName, plrEnabledCbs, plrsEnabled, plrsNames, plrsColors;
         btnName = event.target.returnValue;
+        if (btnName !== DIALOG_BUTTON_OK) // Only do stuff when the dialog is confirmed.
+            return;
         plrEnabledCbs = document.getElementsByName("plrEnabled");
 
         fd = new FormData(this.#setupPlrsDialogForm);
@@ -57,6 +60,7 @@ class SetupState extends UIState {
         // Event listeners.
         this.attachListener(this.#playBtn, "click", this.#onPlayBtnClicked);
         this.attachListener(this.#setupPlrsDialog, "close", this.#onSetupDialogClosed);
+        this.attachListener(this.#setupPlrsDialog, "cancel", onDialogCanceled);
 
         // Elements.
         showElement(this.#playBtn);
@@ -128,6 +132,7 @@ class PlayState extends UIState {
                 break;
             case ActionType.END_GAME:
                 window.alert(player.name + " wins!");
+                this.#rollBtn.setAttribute("disabled", true);
                 break;
         }
     }

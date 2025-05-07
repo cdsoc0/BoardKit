@@ -6,10 +6,21 @@
     z-index: 100;
 }
 
+#onlineOpenDialog {
+    width: 600px;
+}
+
 .selectedSquare {
     outline-color: cyan;
     outline-style: dashed;
     outline-width: thick;
+}
+
+.scrollable {
+    border-width: 2px;
+    border-style: solid;
+    overflow-y: auto;
+    height: 250px;
 }
 
 @media print {
