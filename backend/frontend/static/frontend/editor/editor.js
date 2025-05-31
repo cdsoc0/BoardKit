@@ -767,7 +767,7 @@ function onOnlineSaveDialogClosed(event) {
 window.addEventListener("load", onPageLoad);
 window.addEventListener("beforeunload", onPageUnload);
 newBtn.addEventListener("click", (ev) => newGame());
-loadBtn.addEventListener("click", onLoadBtnPressed);
+// loadBtn.addEventListener("click", onLoadBtnPressed);
 saveBtn.addEventListener("click", onSaveBtnPressed);
 saveAsBtn.addEventListener("click", onSaveAsBtnPressed);
 uploadBtn.addEventListener("click", onUploadBtnPressed);
